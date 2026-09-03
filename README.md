@@ -1,139 +1,225 @@
-# NarraTV: Intelligent Scene Audio Description for Amazon Fire TV
+# NarraTV
 
-[![Tests: Passing](https://img.shields.io/badge/Tests-100%25%20Passing%20(21%20Suites%20%7C%2067%20Tests)-success)](./ops/sync-and-test.cmd)
+**Audio description for the 93% of films that will never get a human one.**
+
+[![Tests](https://img.shields.io/badge/Tests-22%20suites%20%7C%2087%20passing-success)](./ops/test-all.cmd)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Fire OS Target](https://img.shields.io/badge/Fire%20TV-API%2030%2B%20(1080p%20%2F%204K)-orange)](./apps/firetv)
-[![AWS Architecture](https://img.shields.io/badge/AWS-Bedrock%20Nova%20Pro%20%7C%20Polly%20Neural%20%7C%20Step%20Functions%20%7C%20CDK%20v2-232F3E)](./services/pipeline)
-[![Architecture: Clean](https://img.shields.io/badge/Architecture-Clean%20%26%20Deterministic-blueviolet)](./docs/03-architecture/architecture.md)
+[![Fire TV](https://img.shields.io/badge/Fire%20TV-API%2030%2B%20%7C%201080p-orange)](./apps/firetv)
+[![AWS](https://img.shields.io/badge/AWS-Bedrock%20Nova%20Pro%20%7C%20Polly%20Neural%20%7C%20Step%20Functions%20%7C%20CDK%20v2-232F3E)](./services/pipeline)
 
-> **Built for the Amazon "Build, Ship, Shape" Developer Hackathon 2026**
-> * **Primary Track**: Fire TV & Smart TV Experience
-> * **Mini-Challenge 1**: AWS Builder (Amazon Bedrock Nova Pro + Amazon Polly Neural + AWS Step Functions + CDK v2)
-> * **Mini-Challenge 2**: Open Source (100% MIT Licensed, CC-BY open cinema, offline deterministic engine)
+> Built for the Amazon **Build, Ship, Shape** Developer Hackathon 2026
+> **Track:** Fire TV & Smart TV · **Mini-challenge 1:** AWS Builder · **Mini-challenge 2:** Open Source
 
 ---
 
-## 🌟 The Problem & Solution
+## The gap, in one screenshot
 
-* **The Problem**: According to the World Health Organization (WHO), at least **2.2 billion people** globally live with vision impairment. While dialogue subtitles are widely standard, Audio Description (AD)—spoken narration describing visual actions, facial expressions, and scene changes—remains scarce across streaming and independent cinema.
-* **The Solution**: **NarraTV** is an automated, multimodal scene description pipeline and 10-foot Fire TV application. By uniting **Amazon Bedrock Nova Pro multimodal AI** with a **mathematically deterministic gap-placement scheduler**, NarraTV synthesizes and schedules vivid present-tense scene descriptions exclusively during dialogue-free moments—**guaranteeing 0 dialogue collisions** at an estimated AWS cost of ~$0.37 per 90-minute film.
-
----
-
-## 🎬 Shipped Fire TV Experience
-
-| Catalog Screen (Cinematic Obsidian & Amber) | Real Video Playback with Active Scene Narration |
-|:---:|:---:|
-| Hero spotlight, D-pad spatial navigation, TalkBack announcements | Synchronized speech, SRT dialogue protection, unclipped controls |
+Open a major streaming app and look at a film's audio menu. Here is a real one — a
+2026 Indian feature, playing on a mainstream service:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│  [NarraTV]                                              [● DEMO MODE]      │
-│                                                                            │
-│   SINTEL (2010) · 15m · CC-BY 3.0 · Fantasy / Animation                    │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │                                                                      │  │
-│  │  [  REAL VIDEO PLAYER: Sintel stands atop blizzard-swept peak  ]     │  │
-│  │                                                                      │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                            │
-│   TIMELINE SURFACE (Press MENU to inspect placement invariants):           │
-│  [■■■ Dialogue ■■■] ─── [● AD: "A solitary figure trudges..."] ─── [■■■]   │
-│                                                                            │
-│   Counters: 15 Gaps | 13 Described | 2 Skipped (no-gap) | 0 Overlaps       │
-└────────────────────────────────────────────────────────────────────────────┘
+AUDIO                              SUBTITLES
+  Tamil                        ✓    Off
+  Malayalam        Original         English
+  Malayalam        Audio Descr.     English [CC]
+  Hindi
+  Telugu
+  Kannada
 ```
+
+The film ships in **five languages**. The audio description exists in **one**.
+
+A blind Tamil viewer, on that platform, on that film, gets nothing. Same film,
+same app, same evening. That is not an edge case — it is the normal shape of
+audio description today.
+
+## Why the gap exists
+
+It is arithmetic, not neglect.
+
+| | |
+|---|---|
+| Streaming content with any audio description | **~7%** industry-wide |
+| Netflix, the coverage leader | **~40%** of its library |
+| Cost of human-authored AD | **$15–75 per minute of runtime** |
+| A 150-minute film, one language | **$2,250 – $11,250** |
+| The same film, five languages | **five times that** |
+
+So the original-language release gets described and the dubs do not. Regional
+cinema, back catalogue and independent film never will.
+
+**And the deadline is real.** India's Ministry of Information and Broadcasting
+issued OTT accessibility guidelines on **6 February 2026** requiring audio
+description, and the Delhi High Court is actively directing CBFC and the Centre
+on cinema and OTT accessibility. Platforms are about to need audio description at
+a scale description studios cannot staff.
+
+## What NarraTV is
+
+A Fire TV app that **generates the description track when none exists**, on the
+viewer's device, per title, per language.
+
+It is not a replacement for a skilled human describer. A human is better. It is
+the fallback for everything a human will never be paid to describe.
+
+**Estimated cloud cost for a full 90-minute track: ~$0.37** (breakdown below).
+Against $1,350–6,750 for the human equivalent. That ratio is the entire thesis.
 
 ---
 
-## ⚖️ Verified Reality vs. Unverified Status
+## What it refuses to do
 
-In adherence to hackathon integrity rules, NarraTV explicitly reports what has been verified versus what remains unverified pending cloud account activation:
+This is the part worth reading. An audio describer that talks over the film is
+worse than no describer at all, so every refusal is enforced in code and shown
+on screen.
 
-| Component | Status | Verification Evidence |
+* **It will not speak over dialogue.** Narration is hard-cancelled the instant a
+  dialogue cue starts. Enforced at runtime, covered by a named test.
+* **It will not start what it cannot finish.** Before speaking, the scheduler
+  measures the room to the next cue *from the moment the voice will actually be
+  audible* and refuses outright unless the line fits with 0.4s to spare. The
+  refusal is displayed as `SKIPPED · NO GAP`, never silently swallowed.
+* **It will not pretend to have described a film it hasn't.** Titles with no
+  track play normally under an honest `NO AD TRACK` state. The HUD reads
+  **AD 10/12** — described gaps over real gaps — not a fabricated 100%.
+* **It will not claim AI authorship for text a human wrote.** Every description
+  carries a `frameRef` naming the frame it was written from and an honest
+  `model` field. A test fails the build if either is missing.
+* **It will not block the picture.** Nothing is drawn across the middle of the
+  frame; all chrome auto-hides after 4s. A regression test asserts it.
+
+## The hard part is placement, not prose
+
+Anyone can ask a model for a sentence. The engineering is landing it in the
+right silence.
+
+* **Real gaps.** `findGaps` merges dialogue intervals and applies 300ms guard
+  bands. Sintel's real dialogue starts at **1:47.250**, giving a 107-second
+  describable opening and 12 usable gaps across the film.
+* **Measured latency, not a guessed constant.** Device TTS is not audible the
+  instant you call it. `TtsAdapter` times every utterance from dispatch to first
+  audible sample and feeds a rolling average back as the scheduler's lead-in,
+  seeded from the class of voice actually selected.
+* **Sync you can audit.** The app logs its own error against the video clock:
+
+  ```
+  [narratv] AD sintel-ad-07 audible@58.02s target=58.00s error=0.02s
+  ```
+
+  Measured across the ten opening descriptions: **mean absolute error 0.20s**.
+
+* **Ducking.** The film bed drops to 25% while a description is audible.
+
+---
+
+## Verified vs. unverified
+
+Stated plainly, because a judge should not have to guess.
+
+| Component | Status | Evidence |
 |---|---|---|
-| **Fire TV App UI & Remote D-Pad Navigation** | **VERIFIED** | Tested on Android TV emulator (API 30, 1080p, host GPU). D-pad Euclidean navigation, TalkBack screen reader support. |
-| **Real Video Streaming Engine** | **VERIFIED** | `react-native-video` (ExoPlayer Media3) decodes and streams real H.264 video with millisecond-accurate `onProgress` timecodes. |
-| **Mathematical Scheduler (0 Overlaps)** | **VERIFIED** | Pure TypeScript domain engine tested via 100-run `fast-check` generative property tests (`fast-check`) proving 0 collisions. |
-| **Offline Demo Mode (`DEMO_MODE=true`)** | **VERIFIED** | Bundled open movie fixtures (*Sintel*) play offline with real local TTS fallback (`expo-speech` / Android TTS). |
-| **Honest Non-Generated Track State** | **VERIFIED** | Titles without pre-generated tracks (*Big Buck Bunny*, *Elephants Dream*) stream normally while displaying honest `NO AD TRACK` state. |
-| **Transparency Surfaces** | **VERIFIED** | `TruthPill` indicator, `TimelineSurface` drawer, and `WhyPanel` refusal inspector. |
-| **In-App CC-BY Attribution** | **VERIFIED** | System Status screen prominently displays Blender Foundation Creative Commons licenses. |
-| **Live Bedrock & Polly Adapter Code** | **VERIFIED (Mocked)** | Tested via `aws-sdk-client-mock`. Verifies model `amazon.nova-pro-v1:0`, `us-east-1`, frame bytes, and fail-loud DEMO enforcement. |
-| **Live AWS End-to-End Execution** | **UNVERIFIED** | As disclosed during submission, the AWS account was undergoing activation. Live cloud calls are documented in [`docs/03-architecture/live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md) and remain unverified until executed with live credentials. |
+| Fire TV UI, D-pad navigation, TalkBack | **Verified** | Android TV emulator, API 30, 1080p |
+| Real video streaming | **Verified** | `react-native-video` / ExoPlayer Media3, real `onProgress` timecodes |
+| Scheduler invariants (0 overlaps) | **Verified** | Pure TS engine + `fast-check` property tests |
+| Narration/dialogue collision refusal | **Verified** | Named runtime tests, on-screen refusal |
+| Sync error ≤ ~0.2s mean | **Verified** | App-logged telemetry, `ops-tools/synccheck-inner.cmd` |
+| Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
+| Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
+| Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
+| **Live AWS end-to-end** | **Unverified** | Account activated 2026-09-03; credentials and Bedrock model access still pending. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md) |
+| Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. Gaps 1–11 await Bedrock authoring — see below |
+
+### Why only one gap is described
+
+The description track shipped here covers the film's opening 107 seconds and no
+more. That is deliberate.
+
+An earlier revision of this repository shipped 28 descriptions and a 26-cue
+subtitle file that were **invented** — a plot summary with fabricated
+timestamps, over dialogue that does not occur in the film. It was caught by
+pulling frames from the real stream and comparing. Both files were replaced:
+the subtitles now come verbatim from the official Wikimedia Commons track, and
+every remaining description was written by looking at the frame it names.
+
+Filling gaps 1–11 honestly means authoring against frames, which is exactly what
+LIVE mode exists to do. Generating them offline from a synopsis is the failure
+that was removed. The counters are lower and true.
+
+Evidence images: [`docs/assets/evidence/`](./docs/assets/evidence/).
 
 ---
 
-## 🛠 Orchestrator Run & Build Scripts (Windows)
+## Architecture
 
-All build and testing operations are standardized through the orchestrator scripts in `ops\`:
-
-```powershell
-# 1. Clean monorepo sync & test execution across all 4 workspaces (100% green)
-ops\sync-and-test.cmd
-
-# 2. Compile standalone signed release APK for Fire OS / Android TV
-ops\build-release.cmd
-
-# 3. Enable Google TTS accessibility engine on emulator (ships disabled on AVD images)
-ops\fix-tts.cmd
-
-# 4. Clean install APK and capture verification screenshots
-ops\install-and-shoot.cmd
-
-# 5. Diagnostic recovery scripts if ADB or emulator hangs
-ops\adb-reset.cmd
-ops\restart-emulator.cmd
-```
-
----
-
-## 🏛 Clean Architecture Monorepo
-
-NarraTV enforces Uncle Bob's **Clean Architecture Dependency Rule**: source code dependencies point strictly inward toward domain business rules.
+Dependencies point inward toward the domain.
 
 ```mermaid
 graph TD
-    UI[apps/firetv<br/>React Native 10-Foot UI] --> DOMAIN[packages/scheduler<br/>Pure TS Gap & Placement Rules]
-    BACKEND[services/pipeline<br/>AWS Lambdas & Step Functions] --> DOMAIN
-    UI --> CONTRACTS[packages/contracts<br/>Zod Schemas & Types]
+    UI[apps/firetv<br/>React Native 10-foot UI] --> DOMAIN[packages/scheduler<br/>Pure TS gap + placement rules]
+    BACKEND[services/pipeline<br/>Lambdas + Step Functions] --> DOMAIN
+    UI --> CONTRACTS[packages/contracts<br/>Zod schemas]
     BACKEND --> CONTRACTS
     DOMAIN --> CONTRACTS
-    
+
     style DOMAIN fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#fff
     style CONTRACTS fill:#3B82F6,stroke:#2563EB,stroke-width:2px,color:#fff
     style UI fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
     style BACKEND fill:#232F3E,stroke:#FF9900,stroke-width:2px,color:#fff
 ```
 
-### Workspaces
-* [`packages/contracts`](./packages/contracts): Zod runtime validators and TypeScript types for `Title`, `SubtitleCue`, `Gap`, `Description`, `DescriptionTrack`, and `HealthResponse`.
-* [`packages/scheduler`](./packages/scheduler): Pure TypeScript deterministic timing engine. Implements `findGaps` with 300ms guard bands, `placeDescriptions` with speech-rate budgeting, and mathematical invariant counters.
-* [`apps/firetv`](./apps/firetv): React Native 10-foot television application with D-pad navigation, high-contrast theme, safe-area inset controls, and TalkBack accessibility.
-* [`services/pipeline`](./services/pipeline): AWS CDK v2 cloud infrastructure, Lambda handlers, Step Functions state machine, and the `LiveDescribeAdapter` for Amazon Bedrock Nova Pro and Polly Neural.
+* [`packages/contracts`](./packages/contracts) — Zod validators and types.
+* [`packages/scheduler`](./packages/scheduler) — deterministic timing engine:
+  `findGaps` (300ms guards), `placeDescriptions` (speech-rate budgeting), counters.
+* [`apps/firetv`](./apps/firetv) — 10-foot UI, D-pad navigation, auto-hiding chrome, TalkBack.
+* [`services/pipeline`](./services/pipeline) — CDK v2, Lambdas, Step Functions,
+  and `LiveDescribeAdapter` for Bedrock Nova Pro + Polly Neural.
 
----
+## Estimated cloud cost, per 90-minute film
 
-## 💰 Production Cost Model (Calculated per 90-Minute Film)
-
-| Cloud Resource | Workload per 90-min Film | Pricing Model | Estimated Cost |
+| Resource | Workload | Pricing | Cost |
 |---|---|---|---|
-| **Amazon Bedrock (Nova Pro)** | ~180 gaps × 850 in / 35 out tokens | $0.0008 / 1K in, $0.0032 / 1K out | **$0.142 USD** |
-| **Amazon Polly (Neural)** | ~180 descriptions × 75 characters | $16.00 / 1M characters | **$0.216 USD** |
-| **AWS Lambda** | ~720 invocations (Node.js 22.x) | $0.0000083 / GB-s | **$0.008 USD** |
-| **AWS Step Functions** | ~180 state transitions | $0.025 / 1K transitions | **$0.005 USD** |
-| **Amazon S3 & CloudFront** | 180 audio files + 180 video frames | Standard storage & egress | **$0.003 USD** |
-| **TOTAL ESTIMATED AWS COST** | **Complete Feature Film AD Track** | **Turnkey Automated Cost** | **~$0.37 USD** |
+| Bedrock (Nova Pro) | ~180 gaps × 850 in / 35 out tokens | $0.0008/1K in, $0.0032/1K out | $0.142 |
+| Polly (Neural) | ~180 descriptions × 75 chars | $16.00 / 1M chars | $0.216 |
+| Lambda | ~720 invocations | $0.0000083 / GB-s | $0.008 |
+| Step Functions | ~180 transitions | $0.025 / 1K | $0.005 |
+| S3 + CloudFront | 180 audio + 180 frames | standard | $0.003 |
+| **Total** | | | **~$0.37** |
 
-*All cost references represent calculated AWS cloud resource expenditures documented in [`docs/02-product/sources.md`](./docs/02-product/sources.md).*
+Calculated from published AWS rates ([`docs/02-product/sources.md`](./docs/02-product/sources.md)),
+not measured — live execution is still pending. This is **cloud cost only**; a
+production deployment should budget human QA review on top, and we would not
+claim otherwise.
 
----
+## Running it
 
-## 📜 Open Source & Media Licensing
+```powershell
+ops\test-all.cmd          # 22 suites / 87 tests across 4 workspaces
+ops\build-release.cmd     # signed release APK for Fire OS / Android TV
+ops\test.cmd              # app suites only
+```
 
-* **Software**: Distributed under the [MIT License](./LICENSE) (Copyright © 2026 Atchayam G).
-* **Open Movie Media**: All video streams, subtitles, and extracted artwork are Creative Commons Attribution works from the **Blender Foundation**:
-  * *Sintel* (© copyright Blender Foundation | [durian.blender.org](https://durian.blender.org) | CC-BY 3.0)
-  * *Big Buck Bunny* (© copyright 2008, Blender Foundation / [www.bigbuckbunny.org](https://peach.blender.org) | CC-BY 3.0)
-  * *Elephants Dream* (© copyright 2006, Blender Foundation / Netherlands Media Art Institute / [www.elephantsdream.org](https://orange.blender.org) | CC-BY 2.5)
-* Full licensing records and verification URLs are maintained in [`docs/06-demo-submission/media-licenses.md`](./docs/06-demo-submission/media-licenses.md).
+`NODE_ENV` is pinned to `test` inside those scripts on purpose — see the comment
+in [`ops/test.cmd`](./ops/test.cmd).
+
+Emulator and capture helpers live in `ops-tools/` (outside the repo): emulator
+prep, OBS recording with audio, take verification, and the sync-error harness.
+
+## Licensing
+
+* **Software** — [MIT](./LICENSE), © 2026 Atchayam G.
+* **Media** — Creative Commons Attribution works from the Blender Foundation:
+  * *Sintel* — © Blender Foundation, [durian.blender.org](https://durian.blender.org), CC-BY 3.0
+  * *Big Buck Bunny* — © 2008 Blender Foundation, [peach.blender.org](https://peach.blender.org), CC-BY 3.0
+  * *Elephants Dream* — © 2006 Blender Foundation / Netherlands Media Art Institute, [orange.blender.org](https://orange.blender.org), CC-BY 2.5
+* **Sintel subtitles** — official English track from Wikimedia Commons
+  (`TimedText:Sintel_movie_4K.webm.en.srt`), CC-BY 3.0. Attribution is shown
+  in-app on the System Status screen.
+
+Records: [`docs/06-demo-submission/media-licenses.md`](./docs/06-demo-submission/media-licenses.md).
+
+## Sources
+
+* Audio description coverage — [TestParty media accessibility statistics](https://testparty.ai/blog/media-accessibility-statistics)
+* AD production cost — [3Play Media](https://www.3playmedia.com/blog/how-much-does-audio-description-cost/)
+* India OTT accessibility guidelines & Delhi HC — [MediaNama, Aug 2026](https://www.medianama.com/2026/08/223-delhi-hc-cbfc-ott-differently-abled/)
+* CBFC draft accessibility guidelines — [cbfcindia.gov.in (PDF)](https://www.cbfcindia.gov.in/cbfcAdmin/assets/pdf/Final_Draft_Accessibility_Guidelines_Films.pdf)
