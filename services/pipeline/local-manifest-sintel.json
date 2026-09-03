@@ -1,0 +1,39 @@
+{
+  "title": "sintel",
+  "generatedAt": "2026-09-02T12:29:46.654Z",
+  "mode": "dry-run",
+  "modelId": "amazon.nova-pro-v1:0",
+  "promptHash": "86d9e536fa4b600160c1d6b02583e13669710f4a450bd63f5f36afcd900e0f49",
+  "totalGapsFound": 13,
+  "candidateDescriptions": 3,
+  "plannedBedrockCalls": 3,
+  "plannedPollyCalls": 3,
+  "estimatedCostUsd": {
+    "bedrockInputTokens": 2550,
+    "bedrockOutputTokens": 105,
+    "bedrockCostUsd": 0.0024,
+    "pollyCharacters": 225,
+    "pollyCostUsd": 0.0036,
+    "totalEstimatedCostUsd": 0.006
+  },
+  "samplePlannedRequests": [
+    {
+      "gapId": "gap-0",
+      "timestampSec": 0,
+      "durationSec": 23.7,
+      "promptPreview": "Describe visual scene at 0.0s (gap: 23.7s)"
+    },
+    {
+      "gapId": "gap-1",
+      "timestampSec": 38.8,
+      "durationSec": 30.9,
+      "promptPreview": "Describe visual scene at 38.8s (gap: 30.9s)"
+    },
+    {
+      "gapId": "gap-2",
+      "timestampSec": 72.3,
+      "durationSec": 12.4,
+      "promptPreview": "Describe visual scene at 72.3s (gap: 12.4s)"
+    }
+  ]
+}

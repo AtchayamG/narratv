@@ -1,0 +1,5 @@
+{
+  "app": "node ./dist/cdk/bin/app.js",
+  "output": "cdk.out",
+  "context": {}
+}

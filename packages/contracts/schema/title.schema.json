@@ -1,0 +1,78 @@
+{
+  "$ref": "#/definitions/Title",
+  "definitions": {
+    "Title": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        "durationSec": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "videoUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "streamUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "streamUrlHd": {
+          "type": "string",
+          "format": "uri"
+        },
+        "subtitleUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "descriptionTrackUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "posterUrl": {
+          "type": "string"
+        },
+        "heroUrl": {
+          "type": "string"
+        },
+        "synopsis": {
+          "type": "string"
+        },
+        "genre": {
+          "type": "string"
+        },
+        "rating": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "year",
+        "durationSec",
+        "videoUrl",
+        "synopsis",
+        "genre",
+        "rating",
+        "license"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

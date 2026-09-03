@@ -1,0 +1,45 @@
+﻿[
+  {
+    "id": "sintel",
+    "name": "Sintel",
+    "year": 2010,
+    "durationSec": 888.064,
+    "videoUrl": "https://archive.org/download/Sintel/sintel-2048-stereo_512kb.mp4",
+    "streamUrl": "https://archive.org/download/Sintel/sintel-2048-stereo_512kb.mp4",
+    "streamUrlHd": "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
+    "subtitleUrl": "https://archive.org/download/Sintel/sintel-en.srt",
+    "posterUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg",
+    "synopsis": "A lonely young warrior woman, Sintel, searches across harsh landscapes for a small dragon child she rescued, named Scales.",
+    "genre": "Fantasy / Animation",
+    "rating": "PG",
+    "license": "CC-BY 3.0 (Blender Foundation)"
+  },
+  {
+    "id": "big-buck-bunny",
+    "name": "Big Buck Bunny",
+    "year": 2008,
+    "durationSec": 596.416667,
+    "videoUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+    "streamUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+    "posterUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg",
+    "synopsis": "A large, gentle rabbit deals with bullying forest creatures who ruin his peaceful morning.",
+    "genre": "Comedy / Family",
+    "rating": "G",
+    "license": "CC-BY 3.0 (Blender Foundation)"
+  },
+  {
+    "id": "elephants-dream",
+    "name": "Elephants Dream",
+    "year": 2006,
+    "durationSec": 653.791667,
+    "videoUrl": "https://archive.org/download/ElephantsDream/ed_hd_512kb.mp4",
+    "streamUrl": "https://archive.org/download/ElephantsDream/ed_hd_512kb.mp4",
+    "streamUrlHd": "https://archive.org/download/ElephantsDream/ed_hd.mp4",
+    "subtitleUrl": "https://archive.org/download/ElephantsDream/ed_hd.srt",
+    "posterUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0c/ElephantsDreamPoster.jpg",
+    "synopsis": "Proog and Emo explore a surreal, gigantic mechanical machine whose reality is perceived differently by each.",
+    "genre": "Sci-Fi / Surreal",
+    "rating": "PG",
+    "license": "CC-BY 2.5 (Blender Foundation)"
+  }
+]

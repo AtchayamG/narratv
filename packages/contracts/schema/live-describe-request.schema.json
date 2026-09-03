@@ -1,0 +1,30 @@
+{
+  "$ref": "#/definitions/LiveDescribeRequest",
+  "definitions": {
+    "LiveDescribeRequest": {
+      "type": "object",
+      "properties": {
+        "titleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestampSec": {
+          "type": "number",
+          "minimum": 0
+        },
+        "frameBase64": {
+          "type": "string"
+        },
+        "previousDescription": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "titleId",
+        "timestampSec"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
