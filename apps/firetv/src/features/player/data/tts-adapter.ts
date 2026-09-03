@@ -18,7 +18,19 @@ export interface ITtsAdapter {
   speak(text: string, audioUrl?: string, callbacks?: SpeakCallbacks): Promise<void>;
   stop(): Promise<void>;
   isSpeaking(): Promise<boolean>;
+  /**
+   * How far ahead of the intended moment the scheduler should dispatch speech,
+   * in seconds. Optional so test doubles need not implement it.
+   */
+  getLeadInSec?(): number;
 }
+
+/** Starting guess before any utterance has been measured. */
+export const DEFAULT_LEAD_IN_SEC = 0.6;
+const MIN_LEAD_IN_SEC = 0.25;
+const MAX_LEAD_IN_SEC = 2.0;
+/** Weight of the newest measurement in the rolling average. */
+const LATENCY_SMOOTHING = 0.4;
 
 /** Words per second the device voice actually sustains at rate 1.0. */
 export const SPEECH_WORDS_PER_SEC = 2.5;
@@ -43,11 +55,34 @@ export class TtsAdapter implements ITtsAdapter {
    *  utterance cannot resurrect narration state for a newer one. */
   private generation = 0;
 
+  /**
+   * Measured synthesis latency: the gap between asking the engine to speak and
+   * the first audible sample. A fixed guess cannot be right - it varies with
+   * the voice (embedded vs network), the device, and whether the engine is
+   * warm. So we measure every utterance and feed the rolling average back to
+   * the scheduler as its lead-in. That is what removes the residual lag,
+   * rather than nudging a constant until it looks about right.
+   */
+  private leadInSec = DEFAULT_LEAD_IN_SEC;
+
+  getLeadInSec(): number {
+    return this.leadInSec;
+  }
+
+  private recordLatency(dispatchedAtMs: number) {
+    const observed = (Date.now() - dispatchedAtMs) / 1000;
+    // Ignore absurd samples (app backgrounded, engine wedged).
+    if (observed < 0 || observed > 5) return;
+    const blended = this.leadInSec * (1 - LATENCY_SMOOTHING) + observed * LATENCY_SMOOTHING;
+    this.leadInSec = Math.min(MAX_LEAD_IN_SEC, Math.max(MIN_LEAD_IN_SEC, blended));
+  }
+
   async speak(text: string, audioUrl?: string, callbacks: SpeakCallbacks = {}): Promise<void> {
     await this.stop();
 
     const gen = ++this.generation;
     const fresh = () => gen === this.generation;
+    const dispatchedAtMs = Date.now();
 
     if (audioUrl) {
       try {
@@ -67,6 +102,7 @@ export class TtsAdapter implements ITtsAdapter {
           if (!status.isLoaded || !fresh()) return;
           if (status.isPlaying && !started) {
             started = true;
+            this.recordLatency(dispatchedAtMs);
             callbacks.onStart?.();
           }
           if (status.didJustFinish) {
@@ -94,7 +130,9 @@ export class TtsAdapter implements ITtsAdapter {
         rate: NARRATION_RATE,
         pitch: NARRATION_PITCH,
         onStart: () => {
-          if (fresh()) callbacks.onStart?.();
+          if (!fresh()) return;
+          this.recordLatency(dispatchedAtMs);
+          callbacks.onStart?.();
         },
         onDone: () => {
           if (!fresh()) return;

@@ -22,7 +22,14 @@ import { ITtsAdapter, ttsAdapter, estimateSpeechSec } from '../data/tts-adapter'
  * TAIL_GUARD_SEC to spare. A refusal is surfaced, never silently swallowed.
  */
 
-/** Start synthesis this early so the voice is audible at the slot start. */
+/**
+ * Fallback lead-in, used only until the adapter has measured a real one.
+ * The live value comes from `tts.getLeadInSec()`: the adapter times every
+ * utterance from dispatch to first audible sample and feeds back a rolling
+ * average. A hard-coded constant cannot track the difference between an
+ * embedded voice and a network voice, or a cold engine and a warm one, which
+ * is what leaves a residual lag.
+ */
 export const LEAD_IN_SEC = 0.6;
 /** Required silence between the end of narration and the next dialogue cue. */
 export const TAIL_GUARD_SEC = 0.4;
@@ -149,11 +156,13 @@ export function useScheduler({
 
     // 3. Look for a description whose slot we are entering. The LEAD_IN
     //    window lets synthesis begin before the slot so the voice lands on time.
+    const leadIn = tts.getLeadInSec ? tts.getLeadInSec() : LEAD_IN_SEC;
+
     const candidate = descriptions.find(
       desc =>
         desc.status !== 'skipped' &&
         !handledIdsRef.current.has(desc.id) &&
-        currentTimeSec >= desc.tStart - LEAD_IN_SEC &&
+        currentTimeSec >= desc.tStart - leadIn &&
         currentTimeSec < desc.tEnd
     );
 
@@ -163,7 +172,10 @@ export function useScheduler({
 
     // 4. Will it actually fit before the next line of dialogue?
     const needed = candidate.durationSec ?? estimateSpeechSec(candidate.text);
-    const room = roomBeforeNextCue(currentTimeSec, subtitles);
+    // Measured from when the voice will actually be AUDIBLE (one lead-in from
+    // now), not from this instant - otherwise the room is over-counted by the
+    // lead-in and a tight gap slips through.
+    const room = roomBeforeNextCue(currentTimeSec + leadIn, subtitles);
 
     if (needed + TAIL_GUARD_SEC > room) {
       // Refuse loudly rather than talk over the film.

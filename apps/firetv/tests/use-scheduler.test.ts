@@ -152,13 +152,14 @@ describe('useScheduler runtime invariants', () => {
 
   test('HARD INVARIANT: narration is cut the moment dialogue starts', () => {
     const tts = new FakeTts();
-    // Passes the fit check at 6.0s (4.0s of room, ~3.2s of speech), but the
-    // slot is declared long enough to run past the cue at 10.0s. If the film
-    // reaches dialogue while this is still audible it MUST be cut.
-    const straddling: Description = { ...shortDesc, id: 'straddle', tStart: 6.0, tEnd: 15.0 };
+    // Passes the fit check at 2.1s, but its slot is declared long enough to
+    // run past the cue at 10.0s. Jumping the clock to 10.5s models the film
+    // reaching dialogue while this is still audible - a seek, or an utterance
+    // that ran longer than estimated. It MUST be cut, not faded or finished.
+    const straddling: Description = { ...shortDesc, id: 'straddle', tStart: 2.0, tEnd: 15.0 };
     const { result, rerender } = setup([straddling], tts);
 
-    act(() => rerender({ t: 6.1 }));
+    act(() => rerender({ t: 2.1 }));
     expect(tts.spoken).toHaveLength(1);
     act(() => tts.becomeAudible());
     expect(result.current.isNarrating).toBe(true);
@@ -202,6 +203,41 @@ describe('useScheduler runtime invariants', () => {
     act(() => rerender({ t: 2.4, playing: false }));
     expect(result.current.isNarrating).toBe(false);
     expect(tts.stops).toBeGreaterThan(0);
+  });
+
+  test('uses the adapter\'s MEASURED lead-in, not the fallback constant', () => {
+    // An engine that takes 1.4s to become audible must be dispatched 1.4s
+    // early, or the voice lands late - which is the residual lag.
+    class SlowTts extends FakeTts {
+      getLeadInSec() {
+        return 1.4;
+      }
+    }
+    const tts = new SlowTts();
+    const { rerender } = setup([shortDesc], tts);
+
+    // 1.3s before the slot: inside the measured lead-in, outside the 0.6s one.
+    act(() => rerender({ t: shortDesc.tStart - 1.3 }));
+    expect(tts.spoken).toHaveLength(1);
+  });
+
+  test('a slow engine does not let narration creep into dialogue', () => {
+    // Room is measured from when the voice becomes audible, so a long lead-in
+    // makes the fit check stricter rather than looser.
+    class SlowTts extends FakeTts {
+      getLeadInSec() {
+        return 2.0;
+      }
+    }
+    const tts = new SlowTts();
+    // 3.2s of speech, dispatched at 5.0s: audible at 7.0s, would run to 10.2s,
+    // straight into the cue at 10.0s. Must be refused.
+    const tight: Description = { ...shortDesc, id: 'tight', tStart: 7.0, tEnd: 11.0 };
+    const { result, rerender } = setup([tight], tts);
+
+    act(() => rerender({ t: 5.0 }));
+    expect(tts.spoken).toHaveLength(0);
+    expect(result.current.refusal?.reason).toBe('no-gap');
   });
 
   test('AD off never speaks', () => {
