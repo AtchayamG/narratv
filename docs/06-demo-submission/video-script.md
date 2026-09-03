@@ -69,10 +69,35 @@ screen shows **`SKIPPED · NO GAP`**. Hold it long enough to read.
 it doesn't start. It says so, on screen, instead of talking over the film. A
 describer that steps on dialogue is worse than no describer at all."
 
-> **Shot note:** if the opening gap yields no natural refusal, do NOT stage a
-> fake one. Use the Timeline surface to show a description marked skipped, or
-> shorten a gap in a purpose-built fixture and say on camera that it is a test
-> fixture.
+> **Shot note — READ BEFORE SCHEDULING THE SHOOT.**
+>
+> **As of the current build this shot does not exist.** All ten descriptions
+> sit in gap 0 (107 s) and every one of them fits comfortably, so
+> `SKIPPED · NO GAP` never fires during the demo. Do not go into a shoot
+> assuming you can capture it.
+>
+> **It will exist naturally once all twelve gaps are described.** Two real gaps
+> are too short for a normal-length line (measured with `ops-tools/gaps.mjs`):
+>
+> | Gap | Window | Duration | Speech budget after the 0.4 s tail guard |
+> |---|---|---|---|
+> | 1 | 145.30–148.55 s | **3.25 s** | ~2.5 s ≈ 5 words |
+> | 9 | 447.80–452.50 s | **4.70 s** | ~4.0 s ≈ 9 words |
+>
+> A typical 12-word description needs ~5.8 s including the guard. So the moment
+> Bedrock authors lines of natural length for gaps 1 and 9, the refusal fires
+> for real. That is the shot — earned, not arranged.
+>
+> **Until then, two other genuine refusals ARE available today** and either can
+> carry Act 2:
+> 1. `NO AD TRACK` on *Big Buck Bunny* / *Elephants Dream* — the app declining
+>    to invent a track it does not have.
+> 2. Press **Describe** in DEMO mode — the app refuses to fabricate a live
+>    result and says so, rather than quietly returning a canned description.
+>
+> **Do NOT** shorten a gap, pad a description, or hand-write an over-long line
+> to force a refusal on camera. A staged refusal in a film whose entire pitch
+> is honesty is the worst possible thing to be caught doing.
 
 ---
 

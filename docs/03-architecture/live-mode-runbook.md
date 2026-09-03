@@ -89,6 +89,41 @@ transcript and never enters the repository.
 > `aws iam delete-access-key --user-name narratv-pipeline --access-key-id <id>`
 > immediately and mint a new one.
 
+### Escalation: AWS Support case (open)
+
+Every self-service route above was exhausted and all failed the same way, so
+the account was escalated to AWS Support.
+
+| | |
+|---|---|
+| Case ID | **178846263500398** |
+| Subject | Account activation blocked after verification — IAM, CloudShell and Bedrock inaccessible |
+| Category | Account → Other Account Issues |
+| Severity | General question |
+| Opened | 2026-09-03 |
+| Status | Work in progress — AWS indicated a response within 24 hours |
+
+Symptoms reported, all reproduced twice:
+
+1. `/iam/home` and `/bedrock/home` redirect to *"Complete your account setup"*
+2. Clicking **Upgrade plan** returns to Console Home with **no confirmation
+   screen and no visible plan change** — this is why the upgrade never took
+3. **CloudShell fails outright**: *"Unable to create the environment."* — itself
+   evidence the account is gated, since CloudShell is one of the restricted
+   services
+4. Console Home and Billing load normally, which makes the account look active
+
+> [!NOTE]
+> **"Basic Support" is the SUPPORT plan, not the ACCOUNT plan.** The console
+> shows it prominently in Support Center and it is easy to mistake for
+> confirmation that the account is on pay-as-you-go. It is not. Account and
+> billing cases are free on Basic Support, which is why this escalation cost
+> nothing.
+
+Until the case is resolved, live mode stays **UNVERIFIED** and the app stays in
+DEMO mode, which fails loud rather than faking a Bedrock result. Nothing in the
+submission claims otherwise.
+
 ---
 
 ## 2. Least-Privilege IAM Policy
