@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { FixtureTrackRepository } from '../src/features/catalog/data/fixture-track-repository';
 import { PlayerScreen } from '../src/features/player/presentation/PlayerScreen';
@@ -49,8 +49,7 @@ describe('12.1 Titles Without Description Track', () => {
     });
 
     expect(screen.getByText('NO AD TRACK')).toBeTruthy();
-    expect(screen.getByText('Audio Description Not Generated')).toBeTruthy();
-    expect(screen.getByText('AD: N/A')).toBeTruthy();
+    expect(screen.getByText('AD n/a')).toBeTruthy();
     expect(screen.getByText(/Film plays normally/i)).toBeTruthy();
     expect(screen.queryByText(/Scene action continues smoothly/i)).toBeNull();
   });
@@ -70,8 +69,7 @@ describe('12.1 Titles Without Description Track', () => {
     });
 
     expect(screen.getByText('NO AD TRACK')).toBeTruthy();
-    expect(screen.getByText('Audio Description Not Generated')).toBeTruthy();
-    expect(screen.getByText('AD: N/A')).toBeTruthy();
+    expect(screen.getByText('AD n/a')).toBeTruthy();
     expect(screen.getByText(/Film plays normally/i)).toBeTruthy();
     expect(screen.queryByText(/Scene action continues smoothly/i)).toBeNull();
   });

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as RN from 'react-native';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Image, Animated } from 'react-native';
 import Video, { OnLoadData, OnProgressData } from 'react-native-video';
 import { Title, DescriptionTrack, SubtitleCue, Description } from '@narratv/contracts';
 import { colors, typography, spacing, radii } from '../../../core/theme';
 import { TruthPill } from '../../../shared/TruthPill';
 import { Button } from '../../../shared/Button';
-import { Badge } from '../../../shared/Badge';
 import { Toast } from '../../../shared/Toast';
 import { TimelineSurface } from './TimelineSurface';
 import { WhyPanel } from './WhyPanel';
@@ -20,6 +19,11 @@ export interface PlayerScreenProps {
   route: { params: { titleId: string } };
   navigation: any;
 }
+
+/** Idle time before the chrome fades away and the picture is left clean. */
+const CHROME_IDLE_MS = 4000;
+/** Film bed level while narration is audible, so the voice sits on top. */
+const DUCKED_VOLUME = 0.25;
 
 export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation }) => {
   const { titleId } = route.params;
@@ -43,7 +47,58 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
   const [liveLatencyMs, setLiveLatencyMs] = useState<number | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Auto-hiding chrome. The controls stay mounted (and focusable) so the TV
+  // remote never loses its focus target; only their opacity is animated.
+  const [chromeVisible, setChromeVisible] = useState<boolean>(true);
+  const chromeVisibleRef = useRef<boolean>(true);
+  const chromeOpacity = useRef(new Animated.Value(1)).current;
+  const idleTimerRef = useRef<any>(null);
+
   const videoRef = useRef<any>(null);
+
+  const setChrome = useCallback(
+    (visible: boolean) => {
+      chromeVisibleRef.current = visible;
+      setChromeVisible(visible);
+      Animated.timing(chromeOpacity, {
+        toValue: visible ? 1 : 0,
+        duration: 220,
+        useNativeDriver: true
+      }).start();
+    },
+    [chromeOpacity]
+  );
+
+  /** Any remote activity brings the chrome back and restarts the idle clock. */
+  const revealChrome = useCallback(() => {
+    if (!chromeVisibleRef.current) setChrome(true);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => setChrome(false), CHROME_IDLE_MS);
+  }, [setChrome]);
+
+  /**
+   * While the chrome is hidden the first key press only wakes it — it must not
+   * also fire the focused button, or a viewer nudging the remote would pause
+   * the film by accident.
+   */
+  const guarded = useCallback(
+    (action: () => void) => () => {
+      if (!chromeVisibleRef.current) {
+        revealChrome();
+        return;
+      }
+      revealChrome();
+      action();
+    },
+    [revealChrome]
+  );
+
+  useEffect(() => {
+    revealChrome();
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [revealChrome]);
 
   useEffect(() => {
     let isMounted = true;
@@ -88,7 +143,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
     };
   }, [titleId]);
 
-  // Back navigation stops playback immediately
   const handleBack = useCallback(() => {
     setIsPlaying(false);
     navigation.goBack();
@@ -100,15 +154,17 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
     };
   }, []);
 
-  // Handle Fire TV Remote MENU key to toggle Timeline.
-  // Subscribed defensively: TVEventHandler depends on native TV modules that are
-  // absent in some builds, and an unguarded subscription crashes the whole screen.
+  // Fire TV remote. Every event wakes the chrome; MENU toggles the timeline.
+  // Subscribed defensively: TVEventHandler depends on native TV modules that
+  // are absent in some builds, and an unguarded subscription crashes the screen.
   useEffect(() => {
     let subscription: { remove?: () => void } | undefined;
     try {
       const handler = (RN as any).TVEventHandler;
       subscription = handler?.addListener?.((evt: any) => {
-        if (evt && (evt.eventType === 'menu' || evt.eventKeyAction === 82)) {
+        if (!evt) return;
+        revealChrome();
+        if (evt.eventType === 'menu' || evt.eventKeyAction === 82) {
           setShowTimeline(prev => !prev);
         }
       });
@@ -122,14 +178,18 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
         // ignore
       }
     };
-  }, []);
+  }, [revealChrome]);
 
-  // Synchronized Scheduler Hook - driven strictly by currentTimeSec from onProgress
-  const { currentDescription, currentSubtitle, isNarrating } = useScheduler({
+  // Scheduler - driven strictly by currentTimeSec from onProgress.
+  // Narration is held until the picture is actually on screen: describing a
+  // scene the viewer's companion cannot yet see is the desync that made the
+  // first demo look wrong, and a blind viewer would hear description over a
+  // film that has not started.
+  const { currentDescription, currentSubtitle, isNarrating, refusal } = useScheduler({
     descriptions: track?.descriptions || [],
     subtitles,
     currentTimeSec,
-    isPlaying,
+    isPlaying: isPlaying && isVideoReady,
     adEnabled
   });
 
@@ -155,7 +215,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
     setShowTimeline(prev => !prev);
   }, []);
 
-  // "Describe Now" live trigger
   const handleDescribeNow = useCallback(async () => {
     if (config.demoMode) {
       setToastMessage('LIVE unavailable — demo mode active. Set DEMO_MODE=false with AWS credentials to use live Bedrock inference.');
@@ -172,7 +231,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
 
       setLiveLatencyMs(result.latencyMs);
 
-      // Add newly generated description to the active track
       if (track) {
         setTrack({
           ...track,
@@ -207,7 +265,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
 
   return (
     <View style={styles.container}>
-      {/* Real Video Playback Surface via react-native-video */}
       <View style={styles.videoSurface}>
         <Video
           ref={videoRef}
@@ -218,7 +275,9 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
           paused={!isPlaying}
           repeat={false}
           controls={false}
-          progressUpdateInterval={250}
+          progressUpdateInterval={100}
+          /* Duck the film bed while the description is audible. */
+          volume={isNarrating ? DUCKED_VOLUME : 1.0}
           onReadyForDisplay={() => setIsVideoReady(true)}
           onLoad={(data: OnLoadData) => {
             if (data.duration && data.duration > 0) {
@@ -227,6 +286,11 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
           }}
           onProgress={(data: OnProgressData) => {
             setCurrentTimeSec(data.currentTime);
+            // Fallback readiness signal. Some Fire TV builds deliver progress
+            // before onReadyForDisplay; without this the poster would stay up
+            // over a film that is already running, and narration keyed to the
+            // video clock would be heard against a still image.
+            if (!isVideoReady && data.currentTime > 0) setIsVideoReady(true);
           }}
           onEnd={() => {
             setIsPlaying(false);
@@ -237,7 +301,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
           }}
         />
 
-        {/* Artwork poster visible while video loads / buffers */}
         {!isVideoReady && (
           <Image
             source={getTitleArtwork(title.id, title.heroUrl)}
@@ -246,123 +309,142 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
           />
         )}
 
-        {/* Top Status HUD */}
-        <View style={styles.topHud}>
-          <View style={styles.titleMeta}>
-            <Text style={styles.movieTitle}>{title.name}</Text>
-            <Text style={styles.timecodeText}>
-              {formatTime(currentTimeSec)} / {formatTime(durationSec || title.durationSec)}
+        {/* ---- Top HUD: auto-hiding, single compact row ---- */}
+        <Animated.View
+          style={[styles.topHud, { opacity: chromeOpacity }]}
+          pointerEvents="none"
+          importantForAccessibility={chromeVisible ? 'auto' : 'no-hide-descendants'}
+        >
+          <Text style={styles.movieTitle} numberOfLines={1}>
+            {title.name}
+          </Text>
+          <Text style={styles.timecodeText}>
+            {formatTime(currentTimeSec)} / {formatTime(durationSec || title.durationSec)}
+          </Text>
+          <View style={styles.topHudSpacer} />
+          <TruthPill isLive={!config.demoMode} latencyMs={liveLatencyMs} />
+          <View style={[styles.counterPill, !hasTrackDescriptions && styles.counterPillWarning]}>
+            <Text style={styles.counterText}>
+              {hasTrackDescriptions
+                ? `AD ${track?.metadata.describedCount || 0}/${track?.metadata.totalGaps || 0} · overlaps ${track?.metadata.overlapCount ?? 0}`
+                : 'NO AD TRACK'}
             </Text>
           </View>
+        </Animated.View>
 
-          <View style={styles.topHudRight}>
-            <TruthPill isLive={!config.demoMode} latencyMs={liveLatencyMs} />
-            <View style={[styles.counterPill, !hasTrackDescriptions && styles.counterPillWarning]}>
-              <Text style={styles.counterText}>
-                {hasTrackDescriptions
-                  ? `Gaps: ${track?.metadata.totalGaps || 0} · Described: ${track?.metadata.describedCount || 0} · Overlaps: ${track?.metadata.overlapCount ?? 0}`
-                  : `Gaps: ${track?.metadata.totalGaps || 0} · Described: 0 (No AD Track)`}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Center Active Narration Indicator / No-Track State */}
-        <View style={styles.centerContent}>
+        {/* ----------------------------------------------------------------
+            Lower third. Nothing is ever drawn across the middle of the
+            picture: the description, the dialogue caption and the refusal
+            notice all sit in the bottom band, sized for a 10-foot read but
+            kept to a single strip so sighted viewers are not blocked.
+           ---------------------------------------------------------------- */}
+        <View style={styles.lowerThird} pointerEvents="none">
+          {/* Honest empty state, kept to one line so it never blocks the film. */}
           {!hasTrackDescriptions && (
-            <View
-              style={styles.noTrackBanner}
+            <Animated.View
+              style={[styles.noTrackNote, { opacity: chromeOpacity }]}
               accessible={true}
               accessibilityRole="text"
-              accessibilityLabel="Audio description not yet generated for this title. Video playback is active. Full description tracks are produced offline via the Bedrock Nova Pro multimodal pipeline."
+              accessibilityLabel="Audio description has not been generated for this title. Film plays normally. Description tracks are produced offline by the Bedrock Nova Pro pipeline."
             >
-              <View style={styles.noTrackHeader}>
-                <Badge label="NO AD TRACK" variant="warning" />
-                <Text style={styles.noTrackTitle}>Audio Description Not Generated</Text>
-              </View>
-              <Text style={styles.noTrackBody}>
-                Film plays normally. Audio description for this title has not yet been processed by the Bedrock Nova Pro pipeline.
+              <Text style={styles.noTrackText} numberOfLines={1}>
+                Film plays normally · audio description not generated for this title
               </Text>
-              <Text style={styles.noTrackSubtext}>
-                Produced offline via Amazon Bedrock (see docs/03-architecture/live-mode-runbook.md).
+            </Animated.View>
+          )}
+
+          {refusal && (
+            <View
+              style={styles.refusalPill}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={
+                refusal.reason === 'no-gap'
+                  ? 'Description skipped: no dialogue-free gap long enough.'
+                  : 'Description stopped: dialogue started.'
+              }
+            >
+              <Text style={styles.refusalText}>
+                {refusal.reason === 'no-gap' ? 'SKIPPED · NO GAP' : 'SKIPPED · DIALOGUE'}
               </Text>
             </View>
           )}
 
           {isNarrating && currentDescription && (
             <View
-              style={styles.narrationCard}
+              style={styles.narrationStrip}
               accessible={true}
               accessibilityRole="text"
-              accessibilityLabel={`Audio description speaking: ${currentDescription.text}`}
+              accessibilityLabel={`Audio description: ${currentDescription.text}`}
             >
-              <View style={styles.narrationHeader}>
-                <View style={styles.pulseDot} />
-                <Text style={styles.narrationLabel}>AD ▶ {currentDescription.text}</Text>
-                <Text style={styles.narrationModel}>{currentDescription.model}</Text>
-              </View>
-              <Text style={styles.narrationBody}>"{currentDescription.text}"</Text>
+              <View style={styles.narrationAccent} />
+              <Text style={styles.narrationTag}>AD</Text>
+              <Text style={styles.narrationText} numberOfLines={2}>
+                {currentDescription.text}
+              </Text>
             </View>
           )}
 
           {currentSubtitle && (
-            <View
-              style={styles.dialogueCard}
+            <Text
+              style={styles.dialogueText}
+              numberOfLines={2}
               accessible={true}
               accessibilityRole="text"
-              accessibilityLabel={`Dialogue subtitle: ${currentSubtitle.text}`}
+              accessibilityLabel={`Dialogue: ${currentSubtitle.text}`}
             >
-              <Text style={styles.dialogueLabel}>DIALOGUE (SRT)</Text>
-              <Text style={styles.dialogueBody}>{currentSubtitle.text}</Text>
-            </View>
+              {currentSubtitle.text}
+            </Text>
           )}
         </View>
 
-        {/* Bottom Controls Bar (within 5% TV Safe Area) */}
-        <View style={styles.controlsBar}>
-          <View style={styles.controlButtons}>
-            <Button
-              label={isPlaying ? 'Pause' : 'Play'}
-              variant="primary"
-              style={styles.playerButton}
-              onPress={handleTogglePlay}
-              hasTVPreferredFocus={true}
-              accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}
-            />
-            <Button
-              label={hasTrackDescriptions ? (adEnabled ? 'AD: ON' : 'AD: OFF') : 'AD: N/A'}
-              variant={hasTrackDescriptions ? (adEnabled ? 'secondary' : 'outline') : 'ghost'}
-              style={styles.playerButton}
-              onPress={handleToggleAd}
-              accessibilityLabel={hasTrackDescriptions ? (adEnabled ? 'Audio description is on. Press to mute.' : 'Audio description is off. Press to enable.') : 'Audio description is not available for this title.'}
-            />
-            <Button
-              label={isDescribingLive ? 'Describing...' : (config.demoMode ? 'Describe (Demo)' : 'Describe (LIVE)')}
-              variant={config.demoMode ? 'outline' : 'live'}
-              style={styles.playerButton}
-              onPress={handleDescribeNow}
-              disabled={isDescribingLive}
-              accessibilityLabel="Describe Now. Triggers on-demand multimodal Bedrock description of the current frame."
-            />
-            <Button
-              label={showTimeline ? 'Hide Timeline (Menu)' : 'Timeline (Menu)'}
-              variant="outline"
-              style={styles.playerButton}
-              onPress={handleToggleTimeline}
-              accessibilityLabel="Toggle Timeline surface to view dialogue gaps and scheduled narration blocks"
-            />
-            <Button
-              label="Back to Catalog"
-              variant="ghost"
-              style={styles.playerButton}
-              onPress={handleBack}
-              accessibilityLabel="Back to movie catalog"
-            />
-          </View>
-        </View>
+        {/* ---- Compact auto-hiding control bar ---- */}
+        <Animated.View style={[styles.controlsBar, { opacity: chromeOpacity }]}>
+          <Button
+            label={isPlaying ? 'Pause' : 'Play'}
+            variant="primary"
+            style={styles.playerButton}
+            onPress={guarded(handleTogglePlay)}
+            onFocus={revealChrome}
+            hasTVPreferredFocus={true}
+            accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}
+          />
+          <Button
+            label={hasTrackDescriptions ? (adEnabled ? 'AD on' : 'AD off') : 'AD n/a'}
+            variant={hasTrackDescriptions ? (adEnabled ? 'secondary' : 'outline') : 'ghost'}
+            style={styles.playerButton}
+            onPress={guarded(handleToggleAd)}
+            onFocus={revealChrome}
+            accessibilityLabel={hasTrackDescriptions ? (adEnabled ? 'Audio description is on. Press to mute.' : 'Audio description is off. Press to enable.') : 'Audio description is not available for this title.'}
+          />
+          <Button
+            label={isDescribingLive ? 'Describing…' : (config.demoMode ? 'Describe' : 'Describe live')}
+            variant={config.demoMode ? 'outline' : 'live'}
+            style={styles.playerButton}
+            onPress={guarded(handleDescribeNow)}
+            onFocus={revealChrome}
+            disabled={isDescribingLive}
+            accessibilityLabel="Describe Now. Triggers on-demand multimodal Bedrock description of the current frame."
+          />
+          <Button
+            label="Timeline"
+            variant="outline"
+            style={styles.playerButton}
+            onPress={guarded(handleToggleTimeline)}
+            onFocus={revealChrome}
+            accessibilityLabel="Toggle Timeline surface to view dialogue gaps and scheduled narration blocks"
+          />
+          <Button
+            label="Back"
+            variant="ghost"
+            style={styles.playerButton}
+            onPress={guarded(handleBack)}
+            onFocus={revealChrome}
+            accessibilityLabel="Back to movie catalog"
+          />
+        </Animated.View>
       </View>
 
-      {/* Timeline Surface Drawer */}
       {showTimeline && (
         <TimelineSurface
           descriptions={track?.descriptions || []}
@@ -373,7 +455,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
         />
       )}
 
-      {/* Why This Description Panel */}
       {inspectedDescription && (
         <WhyPanel
           description={inspectedDescription}
@@ -381,7 +462,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
         />
       )}
 
-      {/* Explicit Error Toast */}
       <Toast
         message={toastMessage || ''}
         visible={Boolean(toastMessage)}
@@ -410,9 +490,6 @@ const styles = StyleSheet.create({
   videoSurface: {
     flex: 1,
     backgroundColor: '#000000',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.tvSafeHorizontal,
-    paddingVertical: spacing.tvSafeVertical,
     position: 'relative'
   },
   nativeVideo: {
@@ -425,182 +502,150 @@ const styles = StyleSheet.create({
     height: '100%',
     opacity: 0.85
   },
+
+  // --- top hud ---
   topHud: {
+    position: 'absolute',
+    top: spacing.lg,
+    left: spacing.tvSafeHorizontal,
+    right: spacing.tvSafeHorizontal,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     zIndex: 10
   },
-  titleMeta: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.md
+  topHudSpacer: {
+    flex: 1
   },
   movieTitle: {
-    ...typography.heroTitle,
-    fontSize: 28,
+    ...typography.bodyLarge,
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.textPrimary,
     textShadowColor: 'rgba(0, 0, 0, 0.9)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+    maxWidth: 420
   },
   timecodeText: {
-    ...typography.bodyMedium,
-    color: '#E2E8F0',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    ...typography.caption,
+    fontSize: 14,
+    color: '#CBD5E1',
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4
   },
-  topHudRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md
-  },
   counterPill: {
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)'
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full
+  },
+  counterPillWarning: {
+    backgroundColor: 'rgba(245, 158, 11, 0.22)'
   },
   counterText: {
     ...typography.badge,
     color: colors.textSecondary,
-    fontSize: 12
+    fontSize: 11
   },
-  centerContent: {
+
+  // --- lower third: the only place text is ever drawn over the picture ---
+  lowerThird: {
+    position: 'absolute',
+    left: spacing.tvSafeHorizontal,
+    right: spacing.tvSafeHorizontal,
+    bottom: 92,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    zIndex: 10
+    gap: spacing.sm,
+    zIndex: 9
   },
-  narrationCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.94)',
-    borderColor: colors.narration,
-    borderWidth: 2,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    maxWidth: 750,
-    width: '100%',
-    shadowColor: colors.narration,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 8
-  },
-  narrationHeader: {
+  narrationStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs
-  },
-  pulseDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radii.full,
-    backgroundColor: colors.narration,
-    marginRight: 8
-  },
-  narrationLabel: {
-    ...typography.badge,
-    color: colors.narrationLight,
-    flex: 1,
-    fontSize: 13
-  },
-  narrationModel: {
-    ...typography.caption,
-    fontSize: 12,
-    color: colors.textMuted
-  },
-  narrationBody: {
-    ...typography.bodyLarge,
-    fontSize: 20,
-    lineHeight: 28,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginTop: 4
-  },
-  dialogueCard: {
-    backgroundColor: 'rgba(6, 78, 59, 0.9)',
-    borderColor: colors.dialogue,
-    borderWidth: 1.5,
+    alignSelf: 'center',
+    maxWidth: '86%',
+    backgroundColor: 'rgba(0, 0, 0, 0.62)',
     borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.md,
-    maxWidth: 600
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 10
   },
-  dialogueLabel: {
+  narrationAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+    backgroundColor: colors.narrationLight
+  },
+  narrationTag: {
     ...typography.badge,
     fontSize: 11,
-    color: colors.dialogueLight,
-    marginBottom: 2
+    letterSpacing: 1,
+    color: colors.narrationLight
   },
-  dialogueBody: {
+  narrationText: {
     ...typography.bodyMedium,
-    color: '#ECFDF5',
-    fontStyle: 'italic',
-    textAlign: 'center'
+    fontSize: 19,
+    lineHeight: 25,
+    color: colors.textPrimary,
+    flexShrink: 1
   },
-  controlsBar: {
-    backgroundColor: 'rgba(15, 23, 42, 0.9)',
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+  dialogueText: {
+    ...typography.bodyLarge,
+    fontSize: 22,
+    lineHeight: 30,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.95)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    maxWidth: '82%'
+  },
+  refusalPill: {
     alignSelf: 'center',
-    maxWidth: 1300,
-    zIndex: 10
+    backgroundColor: 'rgba(100, 116, 139, 0.55)',
+    borderRadius: radii.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3
   },
-  controlButtons: {
+  refusalText: {
+    ...typography.badge,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: '#E2E8F0'
+  },
+  noTrackNote: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 4
+  },
+  noTrackText: {
+    ...typography.caption,
+    fontSize: 13,
+    color: '#FBBF24'
+  },
+
+  // --- controls ---
+  controlsBar: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm
+    gap: spacing.xs,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    zIndex: 10
   },
   playerButton: {
     paddingHorizontal: 14,
-    paddingVertical: 10
-  },
-  counterPillWarning: {
-    borderColor: '#F59E0B',
-    backgroundColor: 'rgba(245, 158, 11, 0.15)'
-  },
-  noTrackBanner: {
-    backgroundColor: 'rgba(15, 23, 42, 0.92)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(245, 158, 11, 0.5)',
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    maxWidth: 750,
-    alignSelf: 'center',
-    gap: 6
-  },
-  noTrackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: 2
-  },
-  noTrackTitle: {
-    ...typography.sectionTitle,
-    color: '#FBBF24',
-    fontSize: 18,
-    fontWeight: '700'
-  },
-  noTrackBody: {
-    ...typography.bodyMedium,
-    color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 22
-  },
-  noTrackSubtext: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderRadius: radii.full
   }
 });

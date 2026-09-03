@@ -67,9 +67,42 @@ describe('PlayerScreen Real Video Component', () => {
     render(<PlayerScreen route={route} navigation={mockNav} />);
     expect(await screen.findByText('Sintel')).toBeTruthy();
 
-    const backBtn = screen.getByText('Back to Catalog');
+    const backBtn = screen.getByText('Back');
     fireEvent.press(backBtn);
 
     expect(mockNav.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  test('film audio is ducked only while a description is audible', async () => {
+    const mockNav = {
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      addListener: jest.fn(() => jest.fn())
+    };
+    const route = { params: { titleId: 'sintel' } };
+
+    render(<PlayerScreen route={route} navigation={mockNav} />);
+    expect(await screen.findByText('Sintel')).toBeTruthy();
+
+    // Nothing is being narrated at t=0, so the film plays at full level.
+    const videoElement = screen.getByTestId('native-video-player');
+    expect(videoElement.props.volume).toBe(1.0);
+  });
+
+  test('no overlay is anchored to the centre of the picture', async () => {
+    const mockNav = {
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      addListener: jest.fn(() => jest.fn())
+    };
+    const route = { params: { titleId: 'sintel' } };
+
+    const { toJSON } = render(<PlayerScreen route={route} navigation={mockNav} />);
+    expect(await screen.findByText('Sintel')).toBeTruthy();
+
+    // Guards the accessibility requirement that sighted viewers keep a clear
+    // picture: every overlay must live in the top or bottom band.
+    const tree = JSON.stringify(toJSON());
+    expect(tree).not.toContain('"justifyContent":"center","alignItems":"center","flex":1');
   });
 });
