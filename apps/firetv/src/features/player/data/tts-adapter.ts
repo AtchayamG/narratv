@@ -1,6 +1,11 @@
 import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
-import { getNarrationVoice, NARRATION_RATE, NARRATION_PITCH } from './voice-selection';
+import {
+  getNarrationVoice,
+  initialLeadInFor,
+  NARRATION_RATE,
+  NARRATION_PITCH
+} from './voice-selection';
 
 /**
  * Callbacks let the scheduler drive UI from the REAL speech lifecycle rather
@@ -23,6 +28,8 @@ export interface ITtsAdapter {
    * in seconds. Optional so test doubles need not implement it.
    */
   getLeadInSec?(): number;
+  /** Resolve the voice and seed the lead-in ahead of the first description. */
+  prime?(): Promise<void>;
 }
 
 /** Starting guess before any utterance has been measured. */
@@ -64,9 +71,28 @@ export class TtsAdapter implements ITtsAdapter {
    * rather than nudging a constant until it looks about right.
    */
   private leadInSec = DEFAULT_LEAD_IN_SEC;
+  /** True once the lead-in has been seeded from the chosen voice. */
+  private leadInSeeded = false;
 
   getLeadInSec(): number {
     return this.leadInSec;
+  }
+
+  /**
+   * Resolve the voice and seed the lead-in from it before the first
+   * description is due. Called when the player mounts, so the opening
+   * narration is already close instead of calibrating on the viewer.
+   */
+  async prime(): Promise<void> {
+    const voice = await getNarrationVoice();
+    this.seedLeadIn(voice);
+  }
+
+  private seedLeadIn(voice: Parameters<typeof initialLeadInFor>[0]) {
+    if (this.leadInSeeded) return;
+    this.leadInSeeded = true;
+    this.leadInSec = initialLeadInFor(voice);
+    console.log(`[narratv] initial lead-in seeded to ${this.leadInSec.toFixed(2)}s`);
   }
 
   private recordLatency(dispatchedAtMs: number) {
@@ -123,6 +149,7 @@ export class TtsAdapter implements ITtsAdapter {
       // Best available device voice, resolved once. Falls back to the engine
       // default rather than failing to speak.
       const voice = await getNarrationVoice();
+      this.seedLeadIn(voice);
       if (!fresh()) return;
       Speech.speak(text, {
         language: voice?.language || 'en-US',

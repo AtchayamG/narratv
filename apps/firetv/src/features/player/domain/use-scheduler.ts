@@ -87,6 +87,9 @@ export function useScheduler({
   const lastTimeRef = useRef<number>(currentTimeSec);
   /** The utterance currently dispatched to the TTS engine, audible or not. */
   const pendingRef = useRef<Description | null>(null);
+  /** Latest video clock, readable from async TTS callbacks. */
+  const nowRef = useRef<number>(currentTimeSec);
+  nowRef.current = currentTimeSec;
 
   const silence = useCallback(() => {
     pendingRef.current = null;
@@ -100,6 +103,13 @@ export function useScheduler({
     setRefusal(null);
     silence();
   }, [silence]);
+
+  // Resolve the voice and seed the lead-in before the first description is
+  // due, so the opening narration is already close rather than calibrating on
+  // the viewer. Voice enumeration is slow enough to matter here.
+  useEffect(() => {
+    tts.prime?.();
+  }, [tts]);
 
   // Seeking backwards re-arms everything after the new position.
   useEffect(() => {
@@ -187,10 +197,20 @@ export function useScheduler({
     //    together no matter how long synthesis takes.
     pendingRef.current = candidate;
     setRefusal(null);
+    // Sync telemetry, against the VIDEO clock rather than wall time. `error` is
+    // the number that matters: how far the voice actually landed from the
+    // moment it was written for. Anything under ~0.2s reads as in sync.
+    console.log(
+      `[narratv] AD ${candidate.id} dispatch@${currentTimeSec.toFixed(2)}s target=${candidate.tStart.toFixed(2)}s leadIn=${leadIn.toFixed(2)}s`
+    );
     tts
       .speak(candidate.text, candidate.audioUrl, {
         onStart: () => {
           if (pendingRef.current?.id !== candidate.id) return;
+          const audibleAt = nowRef.current;
+          console.log(
+            `[narratv] AD ${candidate.id} audible@${audibleAt.toFixed(2)}s target=${candidate.tStart.toFixed(2)}s error=${(audibleAt - candidate.tStart).toFixed(2)}s`
+          );
           setCurrentDescription(candidate);
           setIsNarrating(true);
         },

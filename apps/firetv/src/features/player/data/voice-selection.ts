@@ -94,6 +94,21 @@ export async function getNarrationVoice(): Promise<NarrationVoice | null> {
   return cached;
 }
 
+/**
+ * Starting lead-in for a given voice, before any utterance has been measured.
+ *
+ * Measured on the Fire TV image: the embedded voice becomes audible in ~0.6s,
+ * the network voice in ~1.1s. Seeding from the voice class matters because the
+ * rolling average needs a few utterances to converge, and until it does the
+ * FIRST descriptions of a film land late - which is exactly where a viewer
+ * forms their impression of whether the narration is in sync.
+ */
+export function initialLeadInFor(voice: NarrationVoice | null): number {
+  const id = (voice?.identifier || voice?.name || '').toLowerCase();
+  if (id.includes('network')) return 1.1;
+  return 0.6;
+}
+
 /** Test seam. */
 export function resetVoiceCache() {
   cached = undefined;
