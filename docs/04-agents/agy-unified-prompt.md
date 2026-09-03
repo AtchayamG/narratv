@@ -11,6 +11,10 @@ READ FIRST, in this order, before writing any code:
 3. C:\Users\Atchayam\.codex\skills\hackathon-architecture-playbook\references\submission-evidence-checklist.md
 4. C:\Users\Atchayam\.codex\skills\orchestrate-external-coding-agents\SKILL.md
 5. .\AGENTS.md
+5b. .\docs\04-agents\README.md   (MANDATORY - what was fabricated, what was
+    corrected, and which claims in the older handoffs are false)
+5c. .\README.md   (current true state: AD 10/12, 22 suites / 87 tests,
+    live AWS unverified)
 6. .\docs\02-product\product-brief.md
 7. .\docs\03-architecture\architecture.md
 8. ..\..\docs\00-research\Amazon_Build_Ship_Shape_2026_Winning_Strategy.md
@@ -18,6 +22,27 @@ READ FIRST, in this order, before writing any code:
 10. .\docs\04-agents\agy-prompts.md  (full detail of Tasks 1–5; this message is the execution order)
 
 HARD RULES (non-negotiable):
+
+- RULE 1, ABOVE ALL OTHERS - NEVER FABRICATE CONTENT DATA.
+  Never write a description, caption, timestamp, subtitle or transcript from a
+  plot summary, a synopsis, a wiki, or your memory of a film. Write it ONLY
+  from a frame or a source file you have actually opened, and record which one
+  in the `frameRef` / provenance field. If you cannot see the frame, leave it
+  undescribed and say so in the handoff.
+  Partial and true beats complete and invented. Fewer descriptions with an
+  honest counter is a PASS; a full track you invented is a FAIL and will be
+  reverted.
+  This rule exists because it was broken: on 2026-09-03 we found a shipped
+  Sintel subtitle file whose cues 11-26 were dialogue that does not occur in
+  the film, and a 28-entry description track fitted to those fake gaps. Read
+  docs/04-agents/README.md before you touch any fixture.
+
+- RULE 2 - NEVER ASSERT A COUNT AS A QUALITY BAR.
+  Do not write tests like `descriptions.length >= 25`. A quantity assertion
+  cannot detect invented content - ours made the fabrication pass. Assert
+  correctness instead: nothing overlaps, nothing collides with a real cue,
+  every entry carries provenance.
+
 - Do NOT git commit, push, deploy, create AWS resources, upload video, or touch Devpost. Never put secrets in the repo (.env.example only).
 - Never label anything "live" unless a real request path exists that fails EXPLICITLY without credentials. DEMO_MODE must never fake a live result.
 - Domain layer has zero React/AWS imports. Feature-first clean architecture per architecture.md.
