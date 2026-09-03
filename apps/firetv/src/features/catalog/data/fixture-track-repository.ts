@@ -8,109 +8,122 @@ const rawSintelTrack = require('../../../../assets/fixtures/sintel-track.json');
 const titlesData: Title[] = Array.isArray(rawTitles) ? rawTitles : (rawTitles.default || []);
 const sintelTrackData = rawSintelTrack.default || rawSintelTrack;
 
+/**
+ * Official English subtitles for Sintel, from Wikimedia Commons
+ * TimedText:Sintel_movie_4K.webm.en.srt (CC-BY 3.0, (c) Blender Foundation).
+ * Kept byte-identical to assets/fixtures/sintel.srt - see that file's
+ * PROVENANCE.md for what was here before and why it was wrong.
+ *
+ * The film's first spoken word is at 00:01:47,250. Anything that claims
+ * dialogue before that is fabricated.
+ */
 const SINTEL_SRT = `1
-00:00:24,500 --> 00:00:26,800
+00:01:47,250 --> 00:01:50,500
 This blade has a dark past.
 
 2
-00:00:27,200 --> 00:00:29,800
+00:01:51,800 --> 00:01:55,800
 It has shed much innocent blood.
 
 3
-00:00:30,200 --> 00:00:34,200
-You're a fool for traveling alone, so completely unprepared.
+00:01:58,000 --> 00:02:01,450
+You're a fool for traveling alone,
+so completely unprepared.
 
 4
-00:00:34,800 --> 00:00:37,500
+00:02:01,750 --> 00:02:04,800
 You're lucky your blood's still flowing.
 
 5
-00:00:38,200 --> 00:00:39,500
+00:02:05,250 --> 00:02:06,300
 Thank you.
 
 6
-00:00:40,200 --> 00:00:44,000
-So... what brings you to the land of the gatekeepers?
+00:02:07,500 --> 00:02:09,000
+So...
 
 7
-00:00:44,800 --> 00:00:47,000
-I'm searching for someone.
+00:02:09,400 --> 00:02:13,800
+What brings you to
+the land of the gatekeepers?
 
 8
-00:00:47,500 --> 00:00:50,800
-Someone very dear? A kindred spirit?
+00:02:15,000 --> 00:02:17,500
+I'm searching for someone.
 
 9
-00:00:51,500 --> 00:00:53,200
-A dragon.
+00:02:18,000 --> 00:02:22,200
+Someone very dear?
+A kindred spirit?
 
 10
-00:00:54,000 --> 00:00:57,200
-A dangerous quest for a lone hunter.
+00:02:23,400 --> 00:02:25,000
+A dragon.
 
 11
-00:00:58,000 --> 00:01:00,800
-I've been looking for a long time.
+00:02:28,850 --> 00:02:31,750
+A dangerous quest for a lone hunter.
 
 12
-00:01:25,000 --> 00:01:27,500
-It was winter...
+00:02:32,950 --> 00:02:35,870
+I've been alone for
+as long as I can remember.
 
 13
-00:01:48,000 --> 00:01:51,000
-I found him in the town square.
+00:03:27,250 --> 00:03:30,500
+We're almost done. Shhh...
 
 14
-00:02:08,000 --> 00:02:11,500
-He was wounded, shivering in the cold.
+00:03:30,750 --> 00:03:33,500
+Hey, sit still.
 
 15
-00:02:35,000 --> 00:02:39,000
-I nursed him back to health and named him Scales.
+00:03:48,250 --> 00:03:52,250
+Good night, Scales.
 
 16
-00:03:15,000 --> 00:03:18,000
-He learned to fly quickly.
+00:04:10,350 --> 00:04:13,850
+Get him, Scales! Come on!
 
 17
-00:03:45,000 --> 00:03:47,500
-We were inseparable.
+00:04:25,250 --> 00:04:28,250
+Scales?
 
 18
-00:04:12,000 --> 00:04:16,500
-Then one afternoon... a giant shadow crossed the sun.
+00:05:04,000 --> 00:05:07,500
+Yeah! Come on!
 
 19
-00:04:38,000 --> 00:04:42,500
-A massive dragon swept down and took him away.
-
-20
-00:04:45,000 --> 00:04:47,000
+00:05:38,750 --> 00:05:42,000
 Scales!
 
+20
+00:07:25,850 --> 00:07:27,500
+I have failed.
+
 21
-00:05:25,000 --> 00:05:30,000
-I swore I would find him, no matter how far I had to walk.
+00:07:32,800 --> 00:07:36,500
+You've only failed to see...
 
 22
-00:06:05,000 --> 00:06:10,000
-Across deserts, through ruined cities, across oceans.
+00:07:37,800 --> 00:07:40,500
+These are dragon lands, Sintel.
 
 23
-00:07:15,000 --> 00:07:20,500
-Be careful in the deep caverns. Dragons remember who hurt them.
+00:07:40,850 --> 00:07:44,000
+You are closer than you know.
 
 24
-00:09:12,000 --> 00:09:15,000
-Scales? Is that you?
+00:09:17,600 --> 00:09:19,500
+Scales!
 
 25
-00:10:45,000 --> 00:10:48,500
-No... no, it can't be!
+00:10:21,600 --> 00:10:24,000
+Scales?
 
 26
-00:11:18,000 --> 00:11:23,500
-What have I done... Scales... I'm so sorry...`;
+00:10:26,200 --> 00:10:29,800
+Scales...`;
 
 const BBB_SRT = `# Big Buck Bunny is a 100% non-dialogue animated film. No spoken dialogue cues.`;
 
@@ -181,21 +194,58 @@ export class FixtureTrackRepository implements ITrackRepository {
       const rawDrafts = (Array.isArray(sintelTrackData.descriptions)
         ? sintelTrackData.descriptions
         : sintelTrackData.default?.descriptions || []) as Description[];
-      const placement = placeDescriptions(gaps, rawDrafts);
-      const counters = computeTrackCounters(placement.scheduled, gaps, cues);
+
+      // Two different kinds of track need two different treatments.
+      //
+      // A DRAFT track carries candidate descriptions with approximate times and
+      // must be fitted into gaps by placeDescriptions().
+      //
+      // A PRE-PLACED track (model 'human-verified-frames', or anything Bedrock
+      // emits already aligned) carries timings that ARE the deliverable: each
+      // line was written against the frame at that exact timestamp. Re-placing
+      // it would snap every description to the head of its gap and destroy the
+      // alignment. So it is VALIDATED instead - anything that would collide
+      // with real dialogue is marked skipped rather than silently moved.
+      const preplaced = sintelTrackData.metadata?.model === 'human-verified-frames';
+
+      const collidesWithDialogue = (d: Description) =>
+        cues.some(cue => d.tStart < cue.tEnd && d.tEnd > cue.tStart);
+
+      const descriptions: Description[] = preplaced
+        ? rawDrafts.map(d =>
+            collidesWithDialogue(d)
+              ? {
+                  ...d,
+                  status: 'skipped' as const,
+                  skipReason: 'no-gap' as const,
+                  placementRule: 'Refused: overlaps a real dialogue cue.'
+                }
+              : d
+          )
+        : placeDescriptions(gaps, rawDrafts).all;
+
+      const active = descriptions.filter(d => d.status !== 'skipped');
+      const counters = preplaced
+        ? {
+            totalGaps: gaps.length,
+            describedCount: active.length,
+            skippedCount: descriptions.length - active.length,
+            overlapCount: active.filter(collidesWithDialogue).length
+          }
+        : computeTrackCounters(active, gaps, cues);
 
       return {
         titleId: 'sintel',
         revision: sintelTrackData.revision || 'v2.0',
         status: sintelTrackData.status as any || 'ai-draft',
-        descriptions: placement.all,
+        descriptions,
         metadata: {
           totalGaps: counters.totalGaps,
           describedCount: counters.describedCount,
           skippedCount: counters.skippedCount,
           overlapCount: counters.overlapCount,
-          generatedAt: sintelTrackData.metadata?.generatedAt || '2026-09-02T12:00:00Z',
-          model: sintelTrackData.metadata?.model || 'fixture-handwritten'
+          generatedAt: sintelTrackData.metadata?.generatedAt || 'not-generated',
+          model: sintelTrackData.metadata?.model || 'none'
         }
       };
     }

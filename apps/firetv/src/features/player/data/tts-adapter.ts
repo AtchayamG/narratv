@@ -1,5 +1,6 @@
 import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
+import { getNarrationVoice, NARRATION_RATE, NARRATION_PITCH } from './voice-selection';
 
 /**
  * Callbacks let the scheduler drive UI from the REAL speech lifecycle rather
@@ -30,7 +31,9 @@ export const SPEECH_WORDS_PER_SEC = 2.5;
 export function estimateSpeechSec(text: string, wordsPerSec = SPEECH_WORDS_PER_SEC): number {
   if (!text || !text.trim()) return 0;
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1.0, words / wordsPerSec + 0.35);
+  // Divided by the narration rate: reading slightly slower for clarity makes
+  // every utterance proportionally longer, and the gap-fit check must know.
+  return Math.max(1.0, words / (wordsPerSec * NARRATION_RATE) + 0.35);
 }
 
 export class TtsAdapter implements ITtsAdapter {
@@ -81,10 +84,15 @@ export class TtsAdapter implements ITtsAdapter {
 
     if (text && text.trim()) {
       this.isSpeakingLocally = true;
+      // Best available device voice, resolved once. Falls back to the engine
+      // default rather than failing to speak.
+      const voice = await getNarrationVoice();
+      if (!fresh()) return;
       Speech.speak(text, {
-        language: 'en',
-        rate: 1.0,
-        pitch: 1.0,
+        language: voice?.language || 'en-US',
+        ...(voice?.identifier ? { voice: voice.identifier } : {}),
+        rate: NARRATION_RATE,
+        pitch: NARRATION_PITCH,
         onStart: () => {
           if (fresh()) callbacks.onStart?.();
         },
