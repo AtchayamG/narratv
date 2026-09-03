@@ -20,6 +20,77 @@
 
 ---
 
+## 1b. Field notes — what actually blocked this (2026-09-03)
+
+Recorded because the failure modes were not obvious and cost hours.
+
+**The account plan is the gate, not credentials.** Every console URL for IAM and
+Bedrock silently redirects to `signup.aws.amazon.com` → *"Complete your account
+setup"*, which reads: *"your account is currently on free plan… Free account
+plans have limited access to certain services and features."* It looks like a
+permissions or activation problem. It is a **plan** problem. The "Welcome to
+AWS — your account is ready" email arrives while the account is still on the
+Free plan, so that email does **not** mean services are usable.
+
+Symptom to recognise: Console Home loads, Billing loads, but `/iam/home` and
+`/bedrock/home` bounce to the setup page.
+
+**The Claude in-app browser cannot drive the AWS console.** It renders static
+pages and shells, but the console's SPA fails with:
+
+> "We could not load the content for the page. This might be due to your
+> firewall or proxy server blocking certain domains used to load this page
+> content."
+
+This happened twice — once redeeming the promotional credit, once loading
+Billing. **Use the desktop browser (Edge/Chrome) for anything in the AWS
+console.** Do not burn time retrying the in-app browser.
+
+**`#/account-plan` is not a real route.** To inspect or change the plan use
+`https://us-east-1.console.aws.amazon.com/account/home`.
+
+### Fastest path to credentials: CloudShell, not the IAM console UI
+
+CloudShell (bottom-left of the console, or the terminal icon in the top bar)
+runs with the signed-in principal's permissions and avoids the IAM console
+entirely. It also gives a **real error message** if the account is still gated,
+instead of a silent redirect.
+
+```bash
+# 0. Does this account actually work yet? A clear error here beats a redirect.
+aws sts get-caller-identity
+aws iam list-users --max-items 1
+
+# 1. Create the pipeline principal
+aws iam create-user --user-name narratv-pipeline
+
+# 2. Attach the least-privilege policy from section 2 of this runbook
+#    (save it as narratv-policy.json in CloudShell first)
+aws iam put-user-policy \
+  --user-name narratv-pipeline \
+  --policy-name NarraTvLiveInvoke \
+  --policy-document file://narratv-policy.json
+
+# 3. Mint the key INTO A FILE, never to the terminal - CloudShell scrollback
+#    is shared with anyone shoulder-surfing or screen-recording the demo.
+aws iam create-access-key --user-name narratv-pipeline > narratv-key.json
+
+# 4. CloudShell -> Actions -> Download file -> narratv-key.json
+```
+
+Then, on the workstation, `ops-tools/import-aws-key.cmd <path-to-file>`
+imports the profile, sets `us-east-1`, **deletes the downloaded file**, and
+verifies with `sts get-caller-identity`. The secret never passes through a chat
+transcript and never enters the repository.
+
+> [!IMPORTANT]
+> Never paste an access key into a chat, an issue, a commit, or a screen
+> recording. If one is ever exposed, run
+> `aws iam delete-access-key --user-name narratv-pipeline --access-key-id <id>`
+> immediately and mint a new one.
+
+---
+
 ## 2. Least-Privilege IAM Policy
 
 Create an IAM User or Execution Role (e.g. `NarraTvLiveExecutionRole`) and attach the following least-privilege policy:
