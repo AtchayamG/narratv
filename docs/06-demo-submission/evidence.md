@@ -56,21 +56,42 @@ This document provides exact file paths, line references, test commands, and arc
 |---|---|---|
 | **Android TV AVD Emulator** | Android TV (API 34 / API 30+ 1080p, x86) | AVD `FireTV_1080p_API30` online via `adb devices` (`emulator-5554`) |
 | **APK Build & Install** | Debug APK (`app-debug.apk`, 135 MB) | Installed via `adb install -r`, launched `com.amazonappdev.narratv/.MainActivity` |
-| **Screen 1: Catalog** | 10-Foot media catalog rail | [`docs/assets/screenshots/catalog.png`](../assets/screenshots/catalog.png) |
-| **Screen 2: Player** | Playback with synchronized audio narration | [`docs/assets/screenshots/player.png`](../assets/screenshots/player.png) |
-| **Screen 3: TimelineSurface** | Interactive track auditor (Menu key) | [`docs/assets/screenshots/timeline.png`](../assets/screenshots/timeline.png) |
-| **Screen 4: WhyPanel** | Provenance inspector (Model, confidence, frame) | [`docs/assets/screenshots/whypanel.png`](../assets/screenshots/whypanel.png) |
-| **Screen 5: System Status** | Live cloud transparency dashboard | [`docs/assets/screenshots/system_status.png`](../assets/screenshots/system_status.png) |
-| **Pill & Error States** | Runtime status & toast alerts | [`docs/assets/screenshots/demo_pill.png`](../assets/screenshots/demo_pill.png)<br/>[`docs/assets/screenshots/error_toast.png`](../assets/screenshots/error_toast.png) |
+| **Screen 1: Catalog** | 10-foot catalog rail, D-pad focus | [`01-catalog.png`](../assets/screenshots/01-catalog.png) |
+| **Screen 2: Player** | Playback with synchronised narration | [`02-player.png`](../assets/screenshots/02-player.png), [`02b-player-30s.png`](../assets/screenshots/02b-player-30s.png), [`03-narration-active.png`](../assets/screenshots/03-narration-active.png) |
+| **Screen 3: TimelineSurface** | Interactive track auditor (Menu key) | [`04-timeline.png`](../assets/screenshots/04-timeline.png) |
+| **Screen 4: WhyPanel** | Provenance inspector (model, confidence, frame) | [`05-whypanel.png`](../assets/screenshots/05-whypanel.png) |
+| **Screen 5: System Status** | Cloud transparency dashboard | [`06-system-status.png`](../assets/screenshots/06-system-status.png) |
+| **Pill & error states** | Runtime status and toast alerts | [`07-demo-pill.png`](../assets/screenshots/07-demo-pill.png), [`08-error-toast.png`](../assets/screenshots/08-error-toast.png) |
+| **CC-BY credits card** | In-app attribution for the Blender films | [`09-credits.png`](../assets/screenshots/09-credits.png) |
+| **Honest empty state** | Titles with no generated AD track | [`10-no-track-bbb.png`](../assets/screenshots/10-no-track-bbb.png), [`11-no-track-ed.png`](../assets/screenshots/11-no-track-ed.png) |
 
 ---
 
 ## 6. Test Suite Summary Table
 
-| Workspace | Test File Count | Tests Passed | Tests Failed | Coverage Highlights |
+Run with `ops\test-all.cmd` (which pins `NODE_ENV=test` — see friction-log entry 8). Last full run 2026-09-04:
+
+| Workspace | Suites | Passed | Failed | Coverage highlights |
 |---|---|---|---|---|
-| `@narratv/contracts` | 1 suite | 6 tests | 0 | 100% Schema validation |
-| `@narratv/scheduler` | 5 suites | 19 tests | 0 | 100% Lines & Functions |
-| `@narratv/firetv` | 8 suites | 17 tests | 0 | Real RN primitives (no blanket mocks) |
-| `@narratv/pipeline` | 3 suites | 9 tests | 0 | Lambdas, Step Functions, CDK |
-| **TOTAL** | **17 suites** | **51 tests** | **0** | **100% Passing** |
+| `@narratv/contracts` | 1 | 6 | 0 | Schema validation |
+| `@narratv/scheduler` | 5 | — | 0 | Gap finding, placement, counters, `fast-check` property tests |
+| `@narratv/firetv` | 12 | — | 0 | Real RN primitives (no blanket mocks); scheduler hook, voice selection, no-track titles, a11y audit |
+| `@narratv/pipeline` | 4 | — | 0 | Lambdas, Step Functions, CDK synth, live Bedrock/Polly adapter |
+| **TOTAL** | **22 suites** | **87 tests** | **0** | all green |
+
+---
+
+## 7. Demo b-roll takes (recorded 2026-09-04, OBS + emulator process audio)
+
+Every take was captured with OBS bound to the emulator window and to the emulator's **process-scoped** audio (`wasapi_process_output_capture`), with all other OBS audio sources muted, and each was machine-verified afterwards for picture and sound rather than eyeballed. `YAVG` is mean luma — a flat value near 16 would mean a black capture; `mean_volume` near −91 dB would mean a silent one.
+
+> These are capture masters, not repository artefacts: `docs/assets/clips/` is gitignored so the repo stays clonable, and the published ≤3-minute demo video is what these are cut into. The filenames below are the masters on the build machine.
+
+| Take | File | Shows | Verified |
+|---|---|---|---|
+| 04 | `obs-broll-04-catalog-dpad-spoken-focus-1080p60.mp4` | D-pad navigation across the catalog rail; *Sintel* carries `AD TRACK`, *Big Buck Bunny* and *Elephants Dream* carry `NO AD TRACK` — the coverage gap in one frame. The app speaks each focused card via `announceForAccessibility`, so the take is audibly navigable with the screen off. | 24 s · YAVG 39→68 · mean −19.8 dB |
+| 05 | `obs-broll-05-no-ad-track-honest-state-1080p60.mp4` | *Big Buck Bunny* plays normally with the `NO AD TRACK` badge, the `AD n/a` control disabled, and the banner "Film plays normally · audio description not generated for this title". No invented narration. | 26 s · YAVG 60→202 · mean −19.9 dB |
+| 06 | `obs-broll-06-demo-mode-live-refusal-1080p60.mp4` | Pressing **Describe** in DEMO mode: "LIVE unavailable — demo mode active. Set DEMO_MODE=false with AWS credentials to use live Bedrock inference." The app refuses rather than faking a result. | 32 s · YAVG 18→89 · picture never black |
+| 07 | `obs-broll-07-talkback-catalog-pass-1080p60.mp4` | A real TalkBack pass over the catalog — green focus rectangles on the cards, screen-reader speech, hero updating to "Play Video (No AD Track)". TalkBack is switched back off immediately after; it is never on for any other capture. | 33 s · YAVG 39→68 · mean −18.0 dB |
+
+**Capture caveat worth keeping.** OBS ships with "Desktop Audio" enabled, which mixes *everything playing on the machine* into a take. That was live when this session started, so any recording made before 2026-09-04 13:35 IST may contain unrelated desktop audio and must be re-checked before it goes near the published video. `ops-tools/obs-isolate-audio.mjs` mutes every source except the emulator and prints the scene contents; `ops-tools/obs-mixer.mjs` reports the mixer state without changing it. Run one of them before any take.
