@@ -126,7 +126,7 @@ Stated plainly, because a judge should not have to guess.
 | Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
-| **Live AWS end-to-end** | **Unverified** | Account activated 2026-09-03; credentials and Bedrock model access still pending. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md) |
+| **Live AWS end-to-end** | **Unverified — blocked upstream** | The AWS account is on the Free account plan, which gates IAM, Bedrock and CloudShell behind a "Complete your account setup" redirect and cannot redeem the hackathon promotional credit. AWS Support case 178846263500398 (opened 2026-09-03) is still unanswered. Nothing in this repository is waiting on code. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md); the full write-up is friction-log entry 9 |
 | Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. Gaps 1–11 await Bedrock authoring — see below |
 
 ### Why only one gap is described
@@ -203,6 +203,21 @@ in [`ops/test.cmd`](./ops/test.cmd).
 
 Emulator and capture helpers live in `ops-tools/` (outside the repo): emulator
 prep, OBS recording with audio, take verification, and the sync-error harness.
+
+### Which Fire TV platform this targets, and why
+
+Fire TV has two platforms — **Fire OS**, which is Android-based, and **Vega
+OS**, which runs React Native on Amazon's own runtime. This app targets Fire OS,
+built with `react-native-tvos` and Expo, and runs on an Android TV device or
+emulator (API 30+).
+
+That is a deliberate choice rather than a limitation: the Vega toolchain
+requires a Linux or macOS host, and this project was built on Windows. Amazon's
+developer-relations team confirmed on the hackathon's official build session
+that Fire OS entries are fully eligible and that a virtual device is an accepted
+demo target — their own live demo ran on one. The domain and scheduler packages
+are plain TypeScript with no platform imports, so a Vega build would reuse them
+unchanged; only the player shell is platform-specific.
 
 ## Licensing
 

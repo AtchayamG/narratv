@@ -75,3 +75,32 @@
 * **Severity**: High (the accessibility audio description product was completely mute).
 * **Workaround**: Created an automated recovery script `ops\fix-tts.cmd` that executes `adb shell pm enable com.google.android.tts` and configures `settings put secure tts_default_synth com.google.android.tts` after emulator boot.
 * **Suggested Fix**: The Android TV emulator system image should ship with the default Google TTS package enabled (`enabled=1`) by default, ensuring accessibility features work out-of-the-box.
+
+---
+
+### Entry 8: `NODE_ENV=production` in the developer's shell silently breaks every React Native Testing Library suite
+* **Task Attempted**: Running the Jest suite (`yarn test`) for the Fire TV app after a routine refactor of the narration scheduler.
+* **Steps Taken**: `yarn test` from `apps/firetv` on a Windows 11 machine where `NODE_ENV` happened to be set to `production` at the user level (a leftover from an unrelated build tool).
+* **Expected vs Actual**: Expected the component suites to mount normally. Instead **every** RNTL suite failed with `Can't access .root on unmounted test renderer`, with no mention of `NODE_ENV` anywhere in the output. The cause is that `react-test-renderer` resolves its production build when `NODE_ENV=production`, and that build does not retain the test instance the way the development build does. The failure was initially — and wrongly — attributed to our own refactor; only a `git stash` back to a known-good commit, which failed identically, isolated it.
+* **Severity**: High (a full day of misdirected debugging; would silently red-wash CI for anyone with that variable set).
+* **Workaround**: Added `ops/test.cmd` and `ops/test-all.cmd`, which pin `NODE_ENV=test` before invoking Jest, and made those the documented entry points so no contributor depends on ambient shell state.
+* **Suggested Fix**: `react-test-renderer` (or the RNTL wrapper) should emit an explicit, actionable error when it is loaded under `NODE_ENV=production` — e.g. *"react-test-renderer was loaded in production mode; set NODE_ENV=test"* — instead of surfacing a downstream unmount error. Better still, `jest-preset` for React Native should force `NODE_ENV=test` the way `react-scripts` does.
+
+---
+
+### Entry 9: AWS "Free" account plan silently blocks IAM, Bedrock, CloudShell and promotional-credit redemption — with no plan-level error message
+* **Task Attempted**: Standing up the live path for the AWS Builder mini-challenge: redeem the $150 Devpost promotional credit, create an IAM access key, enable Amazon Bedrock (`amazon.nova-pro-v1:0`) in `us-east-1`, and deploy a small CDK stack.
+* **Steps Taken**: Created an AWS account during the hackathon window (which now defaults to the **Free** account plan), signed in as root, and navigated to Billing → Credits, then IAM, then Bedrock, then CloudShell.
+* **Expected vs Actual**: Expected the standard console. Instead:
+  * Billing → Credits offered no way to redeem the promotional code; AWS documentation states a free account plan "is ineligible for other promotional credits or incentive offers", but the console gives no such message at the point of failure.
+  * IAM and Bedrock both **redirect to a generic "Complete your account setup" interstitial** rather than reporting that the account plan is the blocker.
+  * CloudShell fails with `Unable to create the environment` and no diagnostic.
+  * The console itself failed to render at all inside two embedded/managed browsers, reporting a firewall or proxy block, forcing a switch to a standalone browser.
+  None of these four surfaces names the account plan as the cause, so the developer has no way to connect the symptom to the fix.
+* **Severity**: **Critical** — it blocks an entire hackathon mini-challenge, and it blocks it *silently*. AWS Support case **178846263500398** was raised 2026-09-03 (severity: low) and was still unassigned with no reply after 24 hours. The project's DEMO path was built to be fully functional without AWS precisely so this could not become a single point of failure, but the LIVE path remains gated.
+* **Workaround**: None available to the developer. The app ships a deterministic on-device DEMO path (device TTS + a pre-verified, human-checked description track) that exercises the identical scheduler and UI, so the product is demonstrable end-to-end while the account is gated; the Bedrock-authored path is feature-flagged behind `DEMO_MODE` and switches on with a config change once the account clears.
+* **Suggested Fix**:
+  1. When an account on the Free plan opens IAM, Bedrock, CloudShell or Credit redemption, say so at the point of failure — *"This service requires the paid (pay-as-you-go) account plan. Upgrade here."* — instead of redirecting to a generic setup page.
+  2. Surface plan eligibility **before** a promotional code is issued, or have Devpost/AWS credit emails state plainly that the Free plan cannot redeem them.
+  3. Consider auto-provisioning hackathon credit recipients onto a plan that can actually spend the credit; a credit that cannot be redeemed on the account it was issued for is worse than no credit.
+  4. Give account-activation Support cases a published SLA distinct from the general low-severity queue — an account that cannot use IAM cannot do anything, so it is not a low-severity condition regardless of the ticket's category.
