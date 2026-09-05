@@ -20,6 +20,19 @@
 
 ---
 
+## 1a. If the console redirects to "Complete your account setup" — the account is on the Free plan
+Symptom: IAM, Bedrock and CloudShell all bounce to a setup interstitial, and the promotional credit cannot be redeemed. Cause: AWS now defaults new accounts to the **Free** account plan, which is ineligible for promotional credits and blocks the services this runbook needs. It also closes the account automatically after 6 months, which would take the judging-window endpoints offline.
+
+Fix (self-service, no support case required, ~1 minute, do it in a standalone browser — the console does not render in embedded/managed browsers):
+
+1. Sign in to the console as the root user.
+2. Go to **https://console.aws.amazon.com/billing/home#/freetier/upgrade**
+3. Review the plan comparison, then choose **Upgrade account**.
+4. Immediately set AWS Budget alerts at **$100** and **$140** — past the credits, spend is real money.
+5. Re-check IAM → Bedrock → CloudShell; they should stop redirecting. Then redeem the $150 code and request `amazon.nova-pro-v1:0` access in `us-east-1`.
+
+Source: AWS Billing user guide, "Choosing a plan" — https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html. The $200 new-account credits carry over to the paid plan; "Paid" only means pay-as-you-go once credits and free tier are exhausted.
+
 ## 1b. Field notes — what actually blocked this (2026-09-03)
 
 Recorded because the failure modes were not obvious and cost hours.
