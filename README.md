@@ -127,8 +127,8 @@ Stated plainly, because a judge should not have to guess.
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
 | **Live AWS — Polly** | **Verified** | Real `SynthesizeSpeech` call, 2026-09-07: `Joanna`/neural, `us-east-1`, returned a 16,460-byte MP3. `ops-tools/verify-live-aws.cmd` |
-| **Live AWS — Bedrock** | **Not yet run** | Credentials confirmed (`sts get-caller-identity` returns the `narratv-pipeline` user), and Polly answers with the same credentials — but `InvokeModel` on `amazon.nova-pro-v1:0` returns `AccessDeniedException: Your account is currently being verified`, a post-activation hold AWS states takes under 2 hours. Nothing here claims a Bedrock call has succeeded, because it has not. See friction-log entries 9–11 |
-| Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. Gaps 1–11 await Bedrock authoring — see below |
+| **Live AWS — Bedrock** | **Verified** | Real `InvokeModel` on `amazon.nova-pro-v1:0`, `us-east-1`, 2026-09-07: returned `{"output":{"message":{"content":[{"text":"NARRATV LIVE OK"}]...}},"stopReason":"end_turn","usage":{"inputTokens":9,"outputTokens":6}}`. Blocked for ~40 min beforehand by a post-activation account hold — friction-log entry 11. `ops-tools/verify-live-aws.cmd` |
+| Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. The film has **13** dialogue-free gaps; gaps 1–12 await Bedrock authoring — see below |
 
 ### Why only one gap is described
 
