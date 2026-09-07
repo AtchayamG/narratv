@@ -128,23 +128,45 @@ Stated plainly, because a judge should not have to guess.
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
 | **Live AWS — Polly** | **Verified** | Real `SynthesizeSpeech` call, 2026-09-07: `Joanna`/neural, `us-east-1`, returned a 16,460-byte MP3. `ops-tools/verify-live-aws.cmd` |
 | **Live AWS — Bedrock** | **Verified** | Real `InvokeModel` on `amazon.nova-pro-v1:0`, `us-east-1`, 2026-09-07: returned `{"output":{"message":{"content":[{"text":"NARRATV LIVE OK"}]...}},"stopReason":"end_turn","usage":{"inputTokens":9,"outputTokens":6}}`. Blocked for ~40 min beforehand by a post-activation account hold — friction-log entry 11. `ops-tools/verify-live-aws.cmd` |
-| Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. The film has **13** dialogue-free gaps; gaps 1–12 await Bedrock authoring — see below |
+| Description coverage | **Complete** | All **13** dialogue-free gaps carry descriptions: 44 lines, of which 42 play and **2 are refused at runtime** because the gap is shorter than the line takes to speak |
+| Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 were kept verbatim; 15 were corrected. Each corrected entry keeps the model's original wording in `draftText` with the reason — see below |
 
-### Why only one gap is described
+### How the track was written, and how good the model actually was
 
-The description track shipped here covers the film's opening 107 seconds and no
-more. That is deliberate.
+Every line in this track was written from a **picture**, never from a synopsis.
+`ops-tools/extract-gap-frames.mjs` pulls frames from the same 888.064-second cut
+the app streams, sampled inside each dialogue-free gap;
+`ops-tools/author-descriptions.mjs` sends each frame to Nova Pro and stores the
+reply verbatim against the timestamp it came from. The model is never told the
+title, the plot, or what happens next. If a call fails, the gap stays
+undescribed rather than being filled with a guess.
 
-An earlier revision of this repository shipped 28 descriptions and a 26-cue
-subtitle file that were **invented** — a plot summary with fabricated
-timestamps, over dialogue that does not occur in the film. It was caught by
-pulling frames from the real stream and comparing. Both files were replaced:
-the subtitles now come verbatim from the official Wikimedia Commons track, and
-every remaining description was written by looking at the frame it names.
+Then a person opened all 34 model-written lines next to their frames. **19 were
+accurate and are kept word for word. 15 were wrong or loose and were corrected.**
+Every corrected entry keeps what the model said in `draftText` alongside the
+reason, so the model's unaided accuracy stays auditable instead of being tidied
+away:
 
-Filling gaps 1–11 honestly means authoring against frames, which is exactly what
-LIVE mode exists to do. Generating them offline from a synopsis is the failure
-that was removed. The counters are lower and true.
+| frame | Nova Pro wrote | what was wrong |
+|---|---|---|
+| `06:41` | "A woman holds a spear and **smiles** in a **dark** landscape." | She is snarling, and the fog is near-white |
+| `07:29` | "An old man with a beard and **glasses**." | No glasses; he wears an ornate headdress |
+| `07:00` | "**Dark** frame with a faint outline of a mountain." | The frame is pale fog |
+| `12:12` | "A young woman **walks towards a small dragon**." | The creature is large and lying still; motion inferred from a still image |
+
+The pattern is consistent and worth stating plainly: the model is reliable on
+**what is in frame** and unreliable on **expression and motion**, which a single
+still cannot carry. For audio description that distinction matters more than
+raw accuracy — telling a blind viewer that a snarling character is smiling is
+worse than saying nothing. That is the argument for keeping a human review step
+in the pipeline rather than shipping raw model output, and it is why
+`services/pipeline/src/local/review-cli.ts` exists.
+
+This discipline was learned the hard way. An earlier revision shipped 28
+descriptions and a 26-cue subtitle file that were **invented** — a plot summary
+with fabricated timestamps, over dialogue that does not occur in the film. It
+was caught by pulling frames and comparing. Both files were replaced: the
+subtitles now come verbatim from the official Wikimedia Commons track.
 
 Evidence images: [`docs/assets/evidence/`](./docs/assets/evidence/).
 

@@ -63,13 +63,28 @@ describe('DI & Data Layer Isolation', () => {
     const { descriptions, metadata } = await repo.getTrack('sintel');
 
     // Guards against a plot-summary track reappearing: each entry must name the
-    // frame it was written from, and the model field must not claim AI output
-    // it did not come from.
+    // frame it was written from, and must state which author produced it.
+    //
+    // The track has mixed provenance by design - the opening gap was written by
+    // hand from frames, the rest by Bedrock from frames - so this asserts the
+    // model is one of the two authors that actually exist, never a vague or
+    // aspirational label.
+    const ALLOWED_AUTHORS = [
+      'human-verified-frames',
+      'amazon.nova-pro-v1:0',
+      'amazon.nova-pro-v1:0 + human-corrected'
+    ];
     for (const d of descriptions.filter(x => x.status !== 'skipped')) {
       expect(d.frameRef).toMatch(/^sintel@\d{2}:\d{2}$/);
-      expect(d.model).toBe('human-verified-frames');
+      expect(ALLOWED_AUTHORS).toContain(d.model);
     }
-    expect(metadata.model).toBe('human-verified-frames');
+    // Every skipped entry must still be traceable - a refusal is not an excuse
+    // to drop provenance.
+    for (const d of descriptions.filter(x => x.status === 'skipped')) {
+      expect(d.frameRef).toMatch(/^sintel@\d{2}:\d{2}$/);
+      expect(ALLOWED_AUTHORS).toContain(d.model);
+    }
+    expect(metadata.model).toMatch(/nova-pro|human-verified-frames/);
   });
 
   test('HttpTrackRepository throws explicit error when API_URL is unconfigured', async () => {

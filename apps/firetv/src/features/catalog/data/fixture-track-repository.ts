@@ -200,13 +200,17 @@ export class FixtureTrackRepository implements ITrackRepository {
       // A DRAFT track carries candidate descriptions with approximate times and
       // must be fitted into gaps by placeDescriptions().
       //
-      // A PRE-PLACED track (model 'human-verified-frames', or anything Bedrock
-      // emits already aligned) carries timings that ARE the deliverable: each
-      // line was written against the frame at that exact timestamp. Re-placing
-      // it would snap every description to the head of its gap and destroy the
+      // A PRE-PLACED track carries timings that ARE the deliverable: each line
+      // was written against the frame at that exact timestamp. Re-placing it
+      // would snap every description to the head of its gap and destroy the
       // alignment. So it is VALIDATED instead - anything that would collide
       // with real dialogue is marked skipped rather than silently moved.
-      const preplaced = sintelTrackData.metadata?.model === 'human-verified-frames';
+      //
+      // This is flagged explicitly rather than inferred from the model name.
+      // The track now carries mixed provenance - gap 0 written by hand from
+      // frames, gaps 1-12 written by Bedrock from frames - so no single model
+      // string describes it, and every description states its own `model`.
+      const preplaced = sintelTrackData.metadata?.placement === 'preplaced';
 
       const collidesWithDialogue = (d: Description) =>
         cues.some(cue => d.tStart < cue.tEnd && d.tEnd > cue.tStart);
