@@ -126,7 +126,8 @@ Stated plainly, because a judge should not have to guess.
 | Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
-| **Live AWS end-to-end** | **Not yet run** | The account activation that blocked this was resolved on 2026-09-07 — IAM and Bedrock are reachable, $170 of credit is active, and Bedrock no longer requires a model-access request. The pipeline has still not been executed against live credentials, so nothing here claims it has. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md); the four-day account story is friction-log entry 9 |
+| **Live AWS — Polly** | **Verified** | Real `SynthesizeSpeech` call, 2026-09-07: `Joanna`/neural, `us-east-1`, returned a 16,460-byte MP3. `ops-tools/verify-live-aws.cmd` |
+| **Live AWS — Bedrock** | **Not yet run** | Credentials confirmed (`sts get-caller-identity` returns the `narratv-pipeline` user), and Polly answers with the same credentials — but `InvokeModel` on `amazon.nova-pro-v1:0` returns `AccessDeniedException: Your account is currently being verified`, a post-activation hold AWS states takes under 2 hours. Nothing here claims a Bedrock call has succeeded, because it has not. See friction-log entries 9–11 |
 | Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. Gaps 1–11 await Bedrock authoring — see below |
 
 ### Why only one gap is described

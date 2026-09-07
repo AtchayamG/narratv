@@ -106,3 +106,23 @@
   3. **Fix or hide the dead "Upgrade plan" button.** On an AISPL account it links to a page that redirects to Console Home. Offering a broken remedy is worse than offering none, because it convinces the developer the problem is elsewhere.
   4. **Make "added" versus "default" explicit.** A payment method that is attached but not set as default does not satisfy activation, and nothing on the Payment Preferences page says so. A warning on the card row would be enough.
   5. **Give account-activation cases their own SLA.** This one sat 63 hours against a 24-hour target in the general low-severity queue. An account that cannot open IAM cannot do anything at all, so severity should be derived from account state, not from the ticket category the customer happened to pick.
+
+---
+
+### Entry 10: `aws configure import` requires a CSV format the IAM console no longer produces
+* **Task Attempted**: Importing a newly created IAM access key into the local credentials file so the pipeline could authenticate, using the documented one-liner `aws configure import --csv file://<downloaded>.csv`.
+* **Steps Taken**: IAM console → Users → `narratv-pipeline` → Security credentials → Create access key → **Download .csv file**, then ran `aws configure import --csv` against exactly that file, unmodified, on AWS CLI v2.
+* **Expected vs Actual**: Expected the credentials to be imported. Instead: `aws: [ERROR]: Expected header "User Name" not found`. The IAM console now emits a two-column file — `Access key ID,Secret access key` — while `aws configure import` still expects the legacy three-column layout that included `User Name`. **The AWS CLI cannot read the CSV that the AWS console just produced**, with no hint in the error that the format itself is the problem rather than the file being wrong or corrupt.
+* **Severity**: Medium. Not a blocker once diagnosed, but it lands at the exact moment a new developer is least equipped to debug it — first credential setup — and the natural next move is to paste the secret somewhere manually, which is the outcome the import command exists to prevent.
+* **Workaround**: Replaced the import call in `ops-tools/import-aws-key.cmd` with a small PowerShell step that reads the two columns itself and passes them to `aws configure set`, then deletes the CSV. The secret still never leaves the machine and never reaches a terminal transcript.
+* **Suggested Fix**: `aws configure import` should accept both layouts and derive the profile name from the filename or a `--profile-name` flag when `User Name` is absent. Failing that, the error should name the mismatch — *"this CSV has columns X, Y; expected User Name, Access key ID, Secret access key"* — so the reader knows it is a format change and not a bad download.
+
+---
+
+### Entry 11: Amazon Bedrock returns AccessDenied for up to 2 hours after account activation, with no signal beforehand
+* **Task Attempted**: The first real `InvokeModel` call to `amazon.nova-pro-v1:0` in `us-east-1`, immediately after the account finished activating and IAM credentials were confirmed working.
+* **Steps Taken**: `aws sts get-caller-identity` (succeeded, correct user ARN) → `aws bedrock-runtime invoke-model --model-id amazon.nova-pro-v1:0`.
+* **Expected vs Actual**: Expected either a completion or a clear quota error. Instead: `AccessDeniedException: Your account is currently being verified. Verification normally takes less than 2 hours.` Nothing in the Bedrock console says this — the Model access page has been retired and now states that serverless models "are automatically enabled… so you can start using them instantly", which is true of model access but not of account verification. **Amazon Polly, called with the same credentials seconds later, worked immediately** and returned a valid neural MP3, so the credentials and region were demonstrably fine; the gate is specific to Bedrock.
+* **Severity**: Low-to-medium. The message is honest, bounded, and gives an escalation address (`aws-verification@amazon.com`) — everything the earlier account-activation failure lacked. This is what a good blocking error looks like. It is logged only because the console actively suggests the opposite is true.
+* **Workaround**: Wait. The rest of the LIVE path was verified around it in the meantime, which is how we know the credentials are sound.
+* **Suggested Fix**: Surface pending account verification in the Bedrock console itself — a banner on the Model catalog or Playground page — rather than only in the runtime API response. A developer reading "you can start using them instantly" and then getting AccessDenied will reasonably conclude they have an IAM problem and go rewrite policies that were never wrong.
