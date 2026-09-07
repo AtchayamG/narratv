@@ -126,7 +126,7 @@ Stated plainly, because a judge should not have to guess.
 | Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
-| **Live AWS end-to-end** | **Unverified — blocked upstream** | The AWS account is on the Free account plan, which gates IAM, Bedrock and CloudShell behind a "Complete your account setup" redirect and cannot redeem the hackathon promotional credit. AWS Support case 178846263500398 (opened 2026-09-03) is still unanswered. Nothing in this repository is waiting on code. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md); the full write-up is friction-log entry 9 |
+| **Live AWS end-to-end** | **Not yet run** | The account activation that blocked this was resolved on 2026-09-07 — IAM and Bedrock are reachable, $170 of credit is active, and Bedrock no longer requires a model-access request. The pipeline has still not been executed against live credentials, so nothing here claims it has. Runbook: [`live-mode-runbook.md`](./docs/03-architecture/live-mode-runbook.md); the four-day account story is friction-log entry 9 |
 | Description coverage | **Partial, by design** | Only gap 0 (0–106.95s) is described. Gaps 1–11 await Bedrock authoring — see below |
 
 ### Why only one gap is described

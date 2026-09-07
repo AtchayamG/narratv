@@ -12,26 +12,28 @@
 
 1. **AWS Account**: Must be on an active **Paid** plan (pay-as-you-go) to allow promo credit redemption and Amazon Bedrock model access.
 2. **Target AWS Region**: `us-east-1` (N. Virginia), where Amazon Nova Pro and Polly Neural voices are generally available.
-3. **Bedrock Model Access**:
-   - Navigate to AWS Management Console → **Amazon Bedrock** → **Model access** in `us-east-1`.
-   - Click **Modify model access**.
-   - Enable **Amazon: Nova Pro** (`amazon.nova-pro-v1:0`) and submit request.
-   - Status will transition from *Available to request* → *In progress* → *Access granted*.
+3. **Bedrock model access**: no longer a step. AWS retired the Model access page — serverless foundation models are enabled automatically in every commercial region on first invocation, so `amazon.nova-pro-v1:0` works on the first `InvokeModel` call with no approval wait. (Verified in the console on 2026-09-07.)
 
 ---
 
-## 1a. If the console redirects to "Complete your account setup" — the account is on the Free plan
-Symptom: IAM, Bedrock and CloudShell all bounce to a setup interstitial, and the promotional credit cannot be redeemed. Cause: AWS now defaults new accounts to the **Free** account plan, which is ineligible for promotional credits and blocks the services this runbook needs. It also closes the account automatically after 6 months, which would take the judging-window endpoints offline.
+## 1a. If the console redirects to "Complete your account setup" (RESOLVED 2026-09-07 — here is what actually worked)
+Symptom: IAM, Bedrock and CloudShell all bounce to a setup interstitial saying the account "is currently on free plan", and CloudShell fails with `Unable to create the environment`. This happened on this project's account (AISPL / AWS India) and cost four days.
 
-Fix (self-service, no support case required, ~1 minute, do it in a standalone browser — the console does not render in embedded/managed browsers):
+**The cause is not the account plan.** It is the payment method. On an AISPL account the **UPI payment mandate can go inactive once identity verification completes**, and that stalls the final activation step — the console then *reports* it as "free plan", which sends you chasing the wrong thing. Confirmed by AWS Support on case 178846263500398.
 
-1. Sign in to the console as the root user.
-2. Go to **https://console.aws.amazon.com/billing/home#/freetier/upgrade**
-3. Review the plan comparison, then choose **Upgrade account**.
-4. Immediately set AWS Budget alerts at **$100** and **$140** — past the credits, spend is real money.
-5. Re-check IAM → Bedrock → CloudShell; they should stop redirecting. Then redeem the $150 code and request `amazon.nova-pro-v1:0` access in `us-east-1`.
+**Do not follow the "Upgrade plan" button.** It links to `billing/home#/freetier/upgrade`, which on this account silently redirects to Console Home and changes nothing. Verified twice.
 
-Source: AWS Billing user guide, "Choosing a plan" — https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html. The $200 new-account credits carry over to the paid plan; "Paid" only means pay-as-you-go once credits and free tier are exhausted.
+What actually fixes it, in a standalone browser (the console does not render inside embedded/managed browsers):
+
+1. Sign in as the root user → **Billing and Cost Management → Payment preferences → Payment methods**.
+2. **Add a credit or debit card.** A card needs no mandate, which is the whole point.
+3. **Set it as the default payment method** — this is the step that matters. Adding the card alone did *not* activate the account; it activated within minutes of the card becoming the default. The banner reads *"Your payment method has been successfully submitted for verification."*
+4. Re-check **IAM** — it should load the users list instead of redirecting. That is the signal the account is live.
+5. Set AWS Budget alerts at **$5** (the real tripwire — expected spend here is under $1) and **$100** as a backstop.
+
+Two things you no longer have to do:
+- **Bedrock model access is not requestable any more.** The Model access page has been retired: *"Serverless foundation models are now automatically enabled across all AWS commercial regions when first invoked in your account."* Nova Pro works on first `InvokeModel`; there is no approval step.
+- **The $150 hackathon credit was already redeemed and active** the whole time. Credits page shows $150 (valid to 2028-08-31) plus a $20 AWS Budgets credit — $170 total, $0 used.
 
 ## 1b. Field notes — what actually blocked this (2026-09-03)
 
