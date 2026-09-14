@@ -1,6 +1,6 @@
 {
   "titleId": "sintel",
-  "revision": "v3.0",
+  "revision": "v3.1",
   "status": "ai-draft",
   "descriptions": [
     {
@@ -140,14 +140,15 @@
     {
       "id": "sintel-ad-12",
       "tStart": 157.67,
-      "tEnd": 161.39,
-      "durationSec": 3.72,
-      "text": "Woman walks through narrow alley with damaged buildings.",
+      "tEnd": 164.34,
+      "durationSec": 6.67,
+      "text": "A young woman with cropped red hair walks through a narrow alley of damaged buildings.",
       "confidence": 0.9,
       "frameRef": "sintel@02:38",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 02:38 of the real stream."
+      "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 02:38 of the real stream.",
+      "continuityFrom": "Woman walks through narrow alley with damaged buildings."
     },
     {
       "id": "sintel-ad-13",
@@ -180,12 +181,13 @@
       "tStart": 218.63,
       "tEnd": 223.19,
       "durationSec": 4.56,
-      "text": "A young woman holds a small dragon in her hands.",
+      "text": "The young woman holds a small dragon in her hands.",
       "confidence": 0.9,
       "frameRef": "sintel@03:39",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 3 (213.8-227.95s). Written by amazon.nova-pro-v1:0 from the frame at 03:39 of the real stream."
+      "placementRule": "Gap 3 (213.8-227.95s). Written by amazon.nova-pro-v1:0 from the frame at 03:39 of the real stream.",
+      "continuityFrom": "A young woman holds a small dragon in her hands."
     },
     {
       "id": "sintel-ad-16",
@@ -216,28 +218,30 @@
     {
       "id": "sintel-ad-18",
       "tStart": 270.05,
-      "tEnd": 275.03,
-      "durationSec": 4.98,
-      "text": "A red-haired young woman looks up, stalls and awnings behind her.",
+      "tEnd": 274.61,
+      "durationSec": 4.56,
+      "text": "The young woman looks up, stalls and awnings behind her.",
       "confidence": 1,
       "frameRef": "sintel@04:30",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 6 (268.55-303.7s). Written by amazon.nova-pro-v1:0 from the frame at 04:30 of the real stream.",
       "draftText": "A woman with red hair stands in front of a building.",
-      "correctionReason": "\"stands in front of a building\" missed that it is a market and that she looks up"
+      "correctionReason": "\"stands in front of a building\" missed that it is a market and that she looks up",
+      "continuityFrom": "A red-haired young woman looks up, stalls and awnings behind her."
     },
     {
       "id": "sintel-ad-19",
       "tStart": 297.7,
       "tEnd": 302.26,
       "durationSec": 4.56,
-      "text": "A young woman stands on a cliff overlooking a city.",
+      "text": "The young woman stands on a cliff overlooking a city.",
       "confidence": 0.9,
       "frameRef": "sintel@04:58",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 6 (268.55-303.7s). Written by amazon.nova-pro-v1:0 from the frame at 04:58 of the real stream."
+      "placementRule": "Gap 6 (268.55-303.7s). Written by amazon.nova-pro-v1:0 from the frame at 04:58 of the real stream.",
+      "continuityFrom": "A young woman stands on a cliff overlooking a city."
     },
     {
       "id": "sintel-ad-20",
@@ -268,14 +272,15 @@
     {
       "id": "sintel-ad-22",
       "tStart": 343.8,
-      "tEnd": 349.2,
-      "durationSec": 5.4,
-      "text": "A woman with red hair and tattoos stands in a ruined city.",
+      "tEnd": 347.94,
+      "durationSec": 4.14,
+      "text": "The young woman, tattooed, stands in a ruined city.",
       "confidence": 0.9,
       "frameRef": "sintel@05:44",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 05:44 of the real stream."
+      "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 05:44 of the real stream.",
+      "continuityFrom": "A woman with red hair and tattoos stands in a ruined city."
     },
     {
       "id": "sintel-ad-23",
@@ -296,12 +301,13 @@
       "tStart": 382.1,
       "tEnd": 385.82,
       "durationSec": 3.72,
-      "text": "Woman with red hair stands in bamboo forest.",
+      "text": "The young woman stands in a bamboo forest.",
       "confidence": 0.9,
       "frameRef": "sintel@06:22",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 06:22 of the real stream."
+      "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 06:22 of the real stream.",
+      "continuityFrom": "Woman with red hair stands in bamboo forest."
     },
     {
       "id": "sintel-ad-25",
@@ -334,16 +340,17 @@
     {
       "id": "sintel-ad-27",
       "tStart": 439.55,
-      "tEnd": 444.53,
-      "durationSec": 4.98,
-      "text": "A red-haired young woman stands in a dark room, looking down.",
+      "tEnd": 444.11,
+      "durationSec": 4.56,
+      "text": "The young woman stands in a dark room, looking down.",
       "confidence": 1,
       "frameRef": "sintel@07:20",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 07:20 of the real stream.",
       "draftText": "A woman with red hair looks to the right.",
-      "correctionReason": "misread her gaze and dropped the setting"
+      "correctionReason": "misread her gaze and dropped the setting",
+      "continuityFrom": "A red-haired young woman stands in a dark room, looking down."
     },
     {
       "id": "sintel-ad-28",
@@ -362,26 +369,28 @@
     {
       "id": "sintel-ad-29",
       "tStart": 465.8,
-      "tEnd": 470.36,
-      "durationSec": 4.56,
-      "text": "A woman with short red hair looks to the side.",
+      "tEnd": 468.26,
+      "durationSec": 2.46,
+      "text": "Sintel looks to the side.",
       "confidence": 0.9,
       "frameRef": "sintel@07:46",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 07:46 of the real stream."
+      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 07:46 of the real stream.",
+      "continuityFrom": "A woman with short red hair looks to the side."
     },
     {
       "id": "sintel-ad-30",
       "tStart": 482.9,
-      "tEnd": 487.04,
-      "durationSec": 4.14,
-      "text": "Woman with short hair and tattoo on her shoulder.",
+      "tEnd": 485.78,
+      "durationSec": 2.88,
+      "text": "A tattoo shows on Sintel's shoulder.",
       "confidence": 0.9,
       "frameRef": "sintel@08:03",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:03 of the real stream."
+      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:03 of the real stream.",
+      "continuityFrom": "Woman with short hair and tattoo on her shoulder."
     },
     {
       "id": "sintel-ad-31",
@@ -410,14 +419,15 @@
     {
       "id": "sintel-ad-33",
       "tStart": 534.2,
-      "tEnd": 537.92,
-      "durationSec": 3.72,
-      "text": "A woman with red hair and closed eyes.",
+      "tEnd": 536.23,
+      "durationSec": 2.03,
+      "text": "Sintel's eyes are closed.",
       "confidence": 0.9,
       "frameRef": "sintel@08:54",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:54 of the real stream."
+      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:54 of the real stream.",
+      "continuityFrom": "A woman with red hair and closed eyes."
     },
     {
       "id": "sintel-ad-34",
@@ -436,38 +446,41 @@
     {
       "id": "sintel-ad-35",
       "tStart": 561.3,
-      "tEnd": 565.86,
-      "durationSec": 4.56,
-      "text": "A woman with red hair crouches near a large creature.",
+      "tEnd": 564.18,
+      "durationSec": 2.88,
+      "text": "Sintel crouches near a large creature.",
       "confidence": 0.9,
       "frameRef": "sintel@09:21",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:21 of the real stream."
+      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:21 of the real stream.",
+      "continuityFrom": "A woman with red hair crouches near a large creature."
     },
     {
       "id": "sintel-ad-36",
       "tStart": 579.3,
-      "tEnd": 583.86,
-      "durationSec": 4.56,
-      "text": "A woman with red hair is fighting a large creature.",
+      "tEnd": 581.76,
+      "durationSec": 2.46,
+      "text": "Sintel fights the large creature.",
       "confidence": 0.9,
       "frameRef": "sintel@09:39",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:39 of the real stream."
+      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:39 of the real stream.",
+      "continuityFrom": "A woman with red hair is fighting a large creature."
     },
     {
       "id": "sintel-ad-37",
       "tStart": 597.3,
-      "tEnd": 601.44,
-      "durationSec": 4.14,
-      "text": "A woman with red hair lies on the ground.",
+      "tEnd": 599.76,
+      "durationSec": 2.46,
+      "text": "Sintel lies on the ground.",
       "confidence": 0.9,
       "frameRef": "sintel@09:57",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
-      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:57 of the real stream."
+      "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:57 of the real stream.",
+      "continuityFrom": "A woman with red hair lies on the ground."
     },
     {
       "id": "sintel-ad-38",
@@ -580,6 +593,16 @@
       "modelLinesKeptVerbatim": 19,
       "modelLinesCorrected": 15,
       "note": "Corrected entries keep the model wording in draftText with the reason, so the model's unaided accuracy stays auditable."
+    },
+    "continuity": {
+      "appliedAt": "2026-09-14T10:22:52Z",
+      "linesEdited": 13,
+      "method": "Offline referent normalisation. No model call, no new observation. Each edited line keeps its original wording in continuityFrom.",
+      "scheme": "Introduce by appearance once; one fixed short form thereafter; the name \"Sintel\" only from 457.8s, the moment the film first speaks it.",
+      "notNormalised": [
+        "sintel-ad-25 - \"a gaunt woman\" is a different character, not the protagonist.",
+        "All dragon references - the small dragon and the large creature are not established as the same animal by any reviewed frame, so neither is renamed \"Scales\"."
+      ]
     }
   }
 }
