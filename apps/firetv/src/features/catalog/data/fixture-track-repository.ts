@@ -188,7 +188,18 @@ export class FixtureTrackRepository implements ITrackRepository {
 
   async getTrack(titleId: string): Promise<DescriptionTrack> {
     const cues = await this.getSubtitles(titleId);
-    const gaps = findGaps(cues, { minGapSec: 2.5, guardMs: 300 });
+    // The film's runtime MUST be passed. Without it findGaps cannot know where
+    // the last gap ends, so it drops the tail gap between the final dialogue
+    // cue and the end of the film entirely. For Sintel that is 630.1s-888.064s
+    // - 258 seconds, the single largest gap in the film - and the counter
+    // reported 12 gaps while the player was placing six descriptions inside
+    // the thirteenth. Counting a gap the app describes is not optional.
+    const title = await this.getTitle(titleId);
+    const gaps = findGaps(cues, {
+      minGapSec: 2.5,
+      guardMs: 300,
+      totalDurationSec: title?.durationSec
+    });
 
     if (titleId === 'sintel') {
       const rawDrafts = (Array.isArray(sintelTrackData.descriptions)

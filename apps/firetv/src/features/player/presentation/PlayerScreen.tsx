@@ -325,8 +325,14 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
           <TruthPill isLive={!config.demoMode} latencyMs={liveLatencyMs} />
           <View style={[styles.counterPill, !hasTrackDescriptions && styles.counterPillWarning]}>
             <Text style={styles.counterText}>
+              {/* Two different quantities, so they get two different labels.
+                  "42/12" read as a fraction and was nonsense: the numerator
+                  counts descriptions that will play, the denominator counted
+                  gaps in the film. Spell both out, and show the refusals -
+                  a skipped description is the behaviour worth advertising,
+                  not something to hide behind a subtraction. */}
               {hasTrackDescriptions
-                ? `AD ${track?.metadata.describedCount || 0}/${track?.metadata.totalGaps || 0} · overlaps ${track?.metadata.overlapCount ?? 0}`
+                ? `${track?.metadata.describedCount ?? 0} AD · ${track?.metadata.skippedCount ?? 0} skipped · ${track?.metadata.totalGaps ?? 0} gaps`
                 : 'NO AD TRACK'}
             </Text>
           </View>
