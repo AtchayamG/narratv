@@ -44,6 +44,9 @@ ops/verify-shots/
 # Raw B-roll video captures — the final demo video lives on YouTube, linked from the README.
 # Keeping large binaries out of git history; regenerate with ops/record-demo.cmd if needed.
 docs/assets/clips/
+# The assembled demo master (35 MB per cut). Same reasoning: the deliverable is
+# the YouTube link in the README, not a binary in history.
+docs/assets/*.mp4
 
 # Logs
 logs

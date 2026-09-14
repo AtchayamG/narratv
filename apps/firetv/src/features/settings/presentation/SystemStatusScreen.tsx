@@ -117,6 +117,12 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
           <Button
             label={config.demoMode ? 'Switch to LIVE (AWS Bedrock)' : 'Switch to DEMO (bundled fixtures)'}
             onPress={handleToggleMode}
+            // Focus lands here on entry. It used to land on "Refresh Status" at
+            // the bottom of the page, which left this button unreachable by
+            // D-pad: pressing DOWN from Refresh goes to "Back to Catalog", and
+            // nothing walks upward into the cards. A control a television
+            // remote cannot reach does not exist on a television.
+            hasTVPreferredFocus
             accessibilityLabel={
               config.demoMode
                 ? 'Switch to live mode. The app will call the deployed AWS pipeline for descriptions.'
@@ -226,7 +232,10 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
           variant="primary"
           onPress={fetchHealth}
           disabled={loading}
-          hasTVPreferredFocus={true}
+          // hasTVPreferredFocus moved to the mode toggle in the first card -
+          // see the note there. Two controls claiming preferred focus is
+          // undefined behaviour, and this one being at the bottom of the page
+          // is what made the toggle unreachable by D-pad.
           accessibilityLabel="Refresh system health status"
         />
         <Button
