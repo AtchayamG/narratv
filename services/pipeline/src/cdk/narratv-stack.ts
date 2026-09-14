@@ -7,6 +7,8 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as path from 'path';
 import { Construct } from 'constructs';
 import { createPipelineStateMachineDefinition } from '../step-functions/pipeline-state-machine';
 
@@ -75,50 +77,62 @@ export class NarraTvPipelineStack extends cdk.Stack {
     };
 
     // 3. Pipeline Lambdas
-    const detectGapsLambda = new lambda.Function(this, 'DetectGapsFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/detect-gaps.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
+    //
+    // These were `lambda.Code.fromInline('exports.handler = async () => {};')`
+    // - six deployable functions containing a no-op, while the real handlers
+    // sat in src/lambdas/*.ts and were never bundled. The stack synthesised,
+    // the synth test passed on resource COUNTS, and deploying it would have
+    // produced a live HTTPS endpoint that returned nothing. That is the worst
+    // kind of green: a "live mode" URL a judge could open and get silence from.
+    //
+    // NodejsFunction bundles the actual TypeScript entry with esbuild, so what
+    // deploys is the code the tests cover. A resource count is not a deployment.
+    // Anchored on the PACKAGE root, then into src/ - never on __dirname alone.
+    //
+    // `path.join(__dirname, '..', 'lambdas')` looks right and works under
+    // ts-jest, where __dirname is <pkg>/src/cdk. Compiled, __dirname is
+    // <pkg>/dist/cdk, so it resolved to dist/lambdas and the deploy died with
+    // "Cannot find entry file at ...\dist\lambdas\detect-gaps.ts" - esbuild
+    // needs the TypeScript source, which only ever exists under src/.
+    // Up two levels is <pkg> from either location.
+    const lambdasDir = path.join(__dirname, '..', '..', 'src', 'lambdas');
+
+    // The AWS SDK v3 clients are NOT in the Lambda Node 22 runtime by default,
+    // so they must be bundled rather than marked external - a runtime
+    // "Cannot find module '@aws-sdk/client-bedrock-runtime'" is exactly the
+    // failure this whole change exists to prevent.
+    const bundling = { minify: true, sourceMap: false, externalModules: [] as string[] };
+
+    const fn = (id: string, entryFile: string, opts: Partial<cdk.aws_lambda.FunctionOptions> = {}) =>
+      new NodejsFunction(this, id, {
+        runtime: lambda.Runtime.NODEJS_22_X,
+        entry: path.join(lambdasDir, entryFile),
+        handler: 'handler',
+        role: lambdaRole,
+        environment: commonEnv,
+        bundling,
+        ...opts
+      });
+
+    const detectGapsLambda = fn('DetectGapsFunction', 'detect-gaps.ts', {
       timeout: cdk.Duration.seconds(30)
     });
 
-    const extractFramesLambda = new lambda.Function(this, 'ExtractFramesFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/extract-frames.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
+    const extractFramesLambda = fn('ExtractFramesFunction', 'extract-frames.ts', {
       timeout: cdk.Duration.minutes(3),
       memorySize: 1024
     });
 
-    const describeLambda = new lambda.Function(this, 'DescribeFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/describe.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
+    const describeLambda = fn('DescribeFunction', 'describe.ts', {
       timeout: cdk.Duration.minutes(1),
       memorySize: 512
     });
 
-    const synthesizeLambda = new lambda.Function(this, 'SynthesizeFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/synthesize.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
+    const synthesizeLambda = fn('SynthesizeFunction', 'synthesize.ts', {
       timeout: cdk.Duration.seconds(45)
     });
 
-    const publishLambda = new lambda.Function(this, 'PublishFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/publish.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
+    const publishLambda = fn('PublishFunction', 'publish.ts', {
       timeout: cdk.Duration.seconds(30)
     });
 
@@ -137,15 +151,26 @@ export class NarraTvPipelineStack extends cdk.Stack {
     });
 
     // 5. API Gateway & Handler
-    const apiLambda = new lambda.Function(this, 'NarraTvApiFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'lambdas/api-handler.handler',
-      code: lambda.Code.fromInline('exports.handler = async () => {};'),
-      role: lambdaRole,
-      environment: commonEnv,
-      timeout: cdk.Duration.seconds(30)
+    // The one the Fire TV app actually calls. BedrockDescribeClient does a
+    // plain fetch() against this endpoint, which is why no AWS credentials ever
+    // reach the television.
+    const apiLambda = fn('NarraTvApiFunction', 'api-handler.ts', {
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 512
     });
 
+    // THROTTLED ON PURPOSE.
+    //
+    // /describe is unauthenticated - a Fire TV app cannot hold a secret, and
+    // the whole point is that no AWS credential goes on the television. But an
+    // open endpoint that invokes Bedrock Nova Pro on demand, published in a
+    // public repository, is an invitation to spend somebody else's hackathon
+    // credit. The credit is finite and expires with the hackathon.
+    //
+    // 5 requests/second with a burst of 10 is far more than the app needs (one
+    // call per Describe press) and turns "run up the bill" into a slow grind
+    // rather than a single afternoon. The $20 monthly budget alarm is the
+    // backstop, not the defence.
     const httpApi = new apigateway.HttpApi(this, 'NarraTvHttpApi', {
       apiName: 'NarraTV API',
       description: 'Public API Gateway for NarraTV Fire TV application and Bedrock live describe endpoints',
@@ -163,6 +188,18 @@ export class NarraTvPipelineStack extends cdk.Stack {
       methods: [apigateway.HttpMethod.ANY],
       integration: apiIntegration
     });
+
+    // The rate limit itself. See the note on the HttpApi above for why an
+    // unauthenticated Bedrock-invoking endpoint gets one.
+    const defaultStage = httpApi.defaultStage?.node.defaultChild as
+      | apigateway.CfnStage
+      | undefined;
+    if (defaultStage) {
+      defaultStage.defaultRouteSettings = {
+        throttlingRateLimit: 5,
+        throttlingBurstLimit: 10
+      };
+    }
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiEndpoint', {

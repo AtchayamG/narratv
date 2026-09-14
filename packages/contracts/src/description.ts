@@ -8,7 +8,13 @@ export const SkipReasonSchema = z.enum([
   'too-long',
   'low-confidence',
   'model-invalid',
-  'human-rejected'
+  'human-rejected',
+  // No frame was supplied, so there was nothing to look at. Asking a
+  // multimodal model to "describe the scene at 2.0s" with no image attached
+  // does not fail - it invents a plausible scene and reports high confidence.
+  // That is the fabrication this whole project exists to refuse, so it gets a
+  // named reason rather than a silent guess.
+  'no-frame'
 ]);
 export type SkipReason = z.infer<typeof SkipReasonSchema>;
 

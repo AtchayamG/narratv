@@ -1,5 +1,6 @@
 {
-  "app": "node ./dist/cdk/bin/app.js",
+  "app": "yarn exec ts-node --prefer-ts-exts src/cdk/bin/app.ts",
   "output": "cdk.out",
-  "context": {}
+  "context": {},
+  "//": "Runs the stack from SOURCE, not from dist/. It used to be 'node ./dist/cdk/bin/app.js', which meant a failing `tsc` left a stale dist and cdk synth/deploy silently kept emitting the PREVIOUS template - so a broken barrel file nobody imported was quietly deciding what reached AWS. Source is now the single authority for what deploys."
 }

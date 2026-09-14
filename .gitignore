@@ -49,6 +49,14 @@ docs/assets/clips/
 logs
 *.log
 ops/*.log
+# Transient run markers written by the detached build/deploy wrappers.
+ops/*.done
+# CDK synth output, and the deploy outputs file. The outputs file is generated
+# and carries the account id inside the state-machine ARN; the two URLs a judge
+# actually needs are documented in the README instead.
+cdk.out/
+services/pipeline/cdk.out/
+ops/cdk-outputs.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

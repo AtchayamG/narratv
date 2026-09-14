@@ -32,6 +32,38 @@ export class DescribeHandler {
   async describe(input: DescribeInput): Promise<Description> {
     const modelId = input.modelId || process.env.BEDROCK_MODEL_ID || 'amazon.nova-pro-v1:0';
 
+    // NO FRAME, NO DESCRIPTION. This refusal is the most important line in the
+    // file.
+    //
+    // The image used to be optional: `if (input.frameBase64)` attached it when
+    // present and simply left it out when absent. Nova Pro does not object to
+    // being asked "describe the scene at timestamp 2.0s" with nothing to look
+    // at - it writes a confident, fluent, entirely invented scene. The live
+    // endpoint was caught doing exactly that: asked about Sintel at 2.0s, which
+    // is snow blowing across mountain peaks, it returned "Person opens closet
+    // door, revealing dark, empty space." with confidence 0.95 and a frameRef
+    // of "frame_2.jpg" - a provenance pointer to an image that never existed.
+    //
+    // frameRef is the field this entire project stakes its honesty on: every
+    // description names the frame it was written from. Synthesising one for an
+    // absent image is the worst bug this codebase could ship, and it was
+    // sitting in production behind a public URL.
+    if (!input.frameBase64) {
+      return {
+        id: `desc-${input.gapId}`,
+        tStart: input.timestampSec,
+        tEnd: input.timestampSec,
+        text: '',
+        confidence: 0,
+        frameRef: 'none - no frame supplied',
+        model: modelId,
+        status: 'skipped',
+        skipReason: 'no-frame',
+        placementRule:
+          'Refused: no frame was supplied, so there was nothing to describe. A description without a frame is a guess.'
+      };
+    }
+
     try {
       const messages: any[] = [];
 
@@ -45,16 +77,15 @@ export class DescribeHandler {
         });
       }
 
-      if (input.frameBase64) {
-        userContent.push({
-          image: {
-            format: 'jpeg',
-            source: {
-              bytes: Buffer.from(input.frameBase64, 'base64')
-            }
+      // Unconditional - the absent-frame case returned above.
+      userContent.push({
+        image: {
+          format: 'jpeg',
+          source: {
+            bytes: Buffer.from(input.frameBase64, 'base64')
           }
-        });
-      }
+        }
+      });
 
       messages.push({
         role: 'user',
@@ -100,7 +131,12 @@ export class DescribeHandler {
         tEnd: input.timestampSec + Math.min(input.gapDurationSec, 3.5),
         text: validated.text,
         confidence: validated.confidence,
-        frameRef: input.frameS3Key || `frame_${input.timestampSec}.jpg`,
+        // Name the frame HONESTLY. `frame_36.jpg` is a filename that looks like
+        // a real object key and is not one - it is the timestamp with an
+        // extension glued on. When the frame arrived inline as base64 there is
+        // no stored object to point at, and saying so is the whole point of
+        // this field.
+        frameRef: input.frameS3Key || `inline-frame@${input.timestampSec.toFixed(1)}s`,
         model: modelId,
         status: validated.confidence >= 0.6 ? 'ai-draft' : 'skipped',
         skipReason: validated.confidence < 0.6 ? 'low-confidence' : undefined,

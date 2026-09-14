@@ -127,6 +127,7 @@ Stated plainly, because a judge should not have to guess.
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
 | **Live AWS — Polly** | **Verified** | Real `SynthesizeSpeech` call, 2026-09-07: `Joanna`/neural, `us-east-1`, returned a 16,460-byte MP3. `ops-tools/verify-live-aws.cmd` |
+| **LIVE mode, in the app's own architecture** | **Deployed and verified** | The CDK stack is live in `us-east-1`. `GET /health` on the deployed HTTP API returns `{"mode":"live","providers":{"bedrock":"ok","polly":"ok","s3":"ok"}}`, and `POST /describe` with a real Sintel frame returns a Nova Pro description in ~2s. The Fire TV app reaches it by plain `fetch()`, so **no AWS credentials ever go on the television**. `ops/verify-live-endpoint.cmd` and `ops/verify-live-describe-real-frame.cmd` reproduce both |
 | **Live AWS — Bedrock** | **Verified** | Real `InvokeModel` on `amazon.nova-pro-v1:0`, `us-east-1`, 2026-09-07: returned `{"output":{"message":{"content":[{"text":"NARRATV LIVE OK"}]...}},"stopReason":"end_turn","usage":{"inputTokens":9,"outputTokens":6}}`. Blocked for ~40 min beforehand by a post-activation account hold — friction-log entry 11. `ops-tools/verify-live-aws.cmd` |
 | Description coverage | **Complete** | All **13** dialogue-free gaps carry descriptions: 44 lines, of which 42 play and **2 are refused at runtime** because the gap is shorter than the line takes to speak |
 | Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 observations were accepted as written; 15 were corrected. Counts are derived from the per-line labels by `ops-tools/apply-character-register.mjs`, never typed in — see below |
@@ -156,6 +157,44 @@ being tidied away:
 | `07:29` | "An old man with a beard and **glasses**." | No glasses; he wears an ornate headdress |
 | `07:00` | "**Dark** frame with a faint outline of a mountain." | The frame is pale fog |
 | `12:12` | "A young woman **walks towards a small dragon**." | The creature is large and lying still; motion inferred from a still image |
+
+### What the live endpoint proved about the model, on the day it went up
+
+Deploying LIVE mode produced a cleaner accuracy measurement than the offline
+review did, because it was unplanned.
+
+**First, the endpoint had to be stopped from inventing.** `POST /describe`
+treated the frame as optional. Asked about Sintel at 2.0 s — snow blowing across
+mountain peaks — with **no image attached**, it answered:
+
+> "Person opens closet door, revealing dark, empty space."
+> `confidence: 0.95`, `frameRef: "frame_2.jpg"`
+
+A fluent invention, a high confidence score, and a provenance pointer to an
+image that never existed. `frameRef` is the field this project stakes its
+honesty on. The handler now refuses outright — `status: skipped`,
+`skipReason: no-frame`, confidence 0, and it does not call the model at all —
+and three tests hold that line.
+
+**Then, with a real frame, the model was measured twice on the same picture.**
+The frame is 00:36: a hooded figure hunched against driving snow, one arm raised
+to shield the face, pale ice to the right, whiteout fog.
+
+| Call | Nova Pro said | confidence |
+|---|---|---|
+| 1 | "Person stands, arms crossed, facing large, glowing blue object." | 0.95 |
+| 2 | "Person in brown coat stands, hands clasped, facing ice wall." | 0.95 |
+
+Same image, same temperature, two different answers. Both get the figure. Both
+get the posture wrong. **Both miss the blizzard**, which is the dominant feature
+of the frame and the one detail a blind viewer most needs. And both report 0.95.
+
+That last column is the finding. **The model's self-reported confidence carries
+no information** — 0.95 on an invention with no image, 0.95 on two
+non-identical readings of one frame, 0.95 while omitting the snow. Any pipeline
+that gates on `confidence >= 0.6` is gating on nothing. This is the strongest
+evidence in the project for the human review step, and it arrived by accident
+from two curl commands against production.
 
 ### One character, one name
 
