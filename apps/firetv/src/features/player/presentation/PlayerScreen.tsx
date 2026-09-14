@@ -217,7 +217,11 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
 
   const handleDescribeNow = useCallback(async () => {
     if (config.demoMode) {
-      setToastMessage('LIVE unavailable — demo mode active. Set DEMO_MODE=false with AWS credentials to use live Bedrock inference.');
+      // This message used to say "Set DEMO_MODE=false", which could never have
+      // worked - see the note in core/config.ts. Point at the switch that
+      // actually exists instead of an environment variable that does not
+      // reach the device.
+      setToastMessage('LIVE is off — open System Status from the catalogue and choose "Switch to LIVE" to describe this frame with AWS Bedrock.');
       return;
     }
 

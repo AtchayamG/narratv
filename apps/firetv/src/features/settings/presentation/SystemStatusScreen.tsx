@@ -6,7 +6,7 @@ import { TruthPill } from '../../../shared/TruthPill';
 import { Badge } from '../../../shared/Badge';
 import { Button } from '../../../shared/Button';
 import { Toast } from '../../../shared/Toast';
-import { config } from '../../../core/config';
+import { config, setDemoMode, canGoLive } from '../../../core/config';
 import { announceForAccessibility } from '../../../core/accessibility';
 
 export interface SystemStatusScreenProps {
@@ -54,6 +54,27 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
     fetchHealth();
   }, []);
 
+  // Bumped purely to force a re-render after the module-level mode flips.
+  const [, setModeTick] = useState<number>(0);
+
+  const handleToggleMode = async () => {
+    const goingLive = config.demoMode;
+    if (goingLive && !canGoLive()) {
+      setToastMessage('No API endpoint is compiled into this build, so LIVE has nowhere to call.');
+      return;
+    }
+    setDemoMode(goingLive ? false : true);
+    setModeTick(t => t + 1);
+    announceForAccessibility(
+      goingLive
+        ? 'Live mode on. Descriptions will be requested from the deployed AWS pipeline.'
+        : 'Demo mode on. The app will use bundled fixtures and make no network calls.'
+    );
+    // Re-probe so the provider cards stop describing the mode we just left.
+    setHealth(null);
+    await fetchHealth();
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header */}
@@ -85,6 +106,25 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
             {config.demoMode
               ? 'App operates in offline standalone demo mode with bundled Creative Commons fixtures and deterministic scheduler.'
               : 'App communicates directly with live deployed AWS Bedrock Converse and Amazon Polly endpoints.'}
+          </Text>
+          {/*
+            Switchable at runtime, on purpose. No AWS credential is ever on the
+            television: LIVE simply lets the app fetch() the deployed HTTP API,
+            and the Lambda behind it holds the keys. So there is nothing unsafe
+            to gate behind a rebuild, and gating it behind one is what hid a
+            broken build-time switch for days.
+          */}
+          <Button
+            label={config.demoMode ? 'Switch to LIVE (AWS Bedrock)' : 'Switch to DEMO (bundled fixtures)'}
+            onPress={handleToggleMode}
+            accessibilityLabel={
+              config.demoMode
+                ? 'Switch to live mode. The app will call the deployed AWS pipeline for descriptions.'
+                : 'Switch to demo mode. The app will use bundled fixtures and make no network calls.'
+            }
+          />
+          <Text style={styles.cardDesc}>
+            {`Endpoint: ${config.apiUrl}`}
           </Text>
         </View>
 
