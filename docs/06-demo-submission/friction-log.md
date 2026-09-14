@@ -127,3 +127,48 @@
 * **Severity**: Low-to-medium. The message is honest, bounded, and gives an escalation address (`aws-verification@amazon.com`) — everything the earlier account-activation failure lacked. This is what a good blocking error looks like. It is logged only because the console actively suggests the opposite is true.
 * **Workaround**: Wait. The rest of the LIVE path was verified around it in the meantime, which is how we know the credentials are sound.
 * **Suggested Fix**: Surface pending account verification in the Bedrock console itself — a banner on the Model catalog or Playground page — rather than only in the runtime API response. A developer reading "you can start using them instantly" and then getting AccessDenied will reasonably conclude they have an IAM problem and go rewrite policies that were never wrong.
+
+---
+
+### Entry 12: `babel-preset-expo` silently erases an unprefixed env var, and `api.cache(true)` then hides the fix
+* **Task Attempted**: Ship a build in which the app's LIVE mode points at the deployed API Gateway endpoint, selected by an environment variable at build time (`API_URL`), exactly as the Expo docs describe for build-time configuration.
+* **Steps Taken**: Set `API_URL` in the Gradle build environment → `assembleRelease` → installed the APK → System Status still reported no endpoint. Unpacked the APK and read the Hermes bundle back (`ops-tools/inspect-apk-bundle.ps1`): the value in the shipped bundle was the literal `undefined`.
+* **Expected vs Actual**: Expected either the value to be inlined, or `process.env.API_URL` to remain a runtime lookup returning `undefined` — either of which is debuggable. What actually happens is that `babel-preset-expo` inlines **only** `EXPO_PUBLIC_`-prefixed variables and *replaces* every other `process.env.X` reference with `undefined` at compile time. So the code reads correct, compiles clean, and can never see the value. Then, after renaming the variable to `EXPO_PUBLIC_API_URL`, the build *still* shipped `undefined`: `api.cache(true)` in `babel.config.js` makes the transform cache insensitive to the environment, so the newly-inlined value was served from a cache entry created by a run in which the variable did not exist.
+* **Severity**: **Critical, and the worst kind.** The end state was a feature that was implemented, unit-tested, documented and demoed — and had never executed once in any build we ever shipped. The test suite was green throughout, because the tests read the same compile-time `undefined` the app did. There is no warning, no error, and no line anywhere in the build output that would tell you.
+* **Workaround**: Abandoned build-time configuration for this value entirely. The endpoint is now a committed constant in `apps/firetv/src/core/config.ts` and LIVE/DEMO is a **runtime** toggle on the System Status screen with a listener-based mode change — no rebuild, no env var. `apps/firetv/tests/config-env-prefix.test.ts` asserts that `config.ts` contains no `process.env` at all, so this cannot come back.
+* **Suggested Fix**:
+  1. **Print what was inlined.** One line in the build output — *"inlined EXPO_PUBLIC_API_URL, EXPO_PUBLIC_MEDIA_URL"* — would have ended this in two minutes instead of two days. The information is already in the transform; it is simply not surfaced.
+  2. **Warn on the near-miss.** When the preset rewrites `process.env.FOO` to `undefined` and `EXPO_PUBLIC_FOO` exists in the environment, that is almost certainly a mistake and deserves a build warning.
+  3. **Make the cache honest.** `api.cache(true)` combined with environment-dependent inlining is a correctness bug, not a performance tradeoff. Key the cache on the `EXPO_PUBLIC_*` set, or warn when both are in play.
+
+---
+
+### Entry 13: The React Native Gradle bundle task reports `UP-TO-DATE` after an environment change, and ships the previous bundle
+* **Task Attempted**: Rebuild the release APK after changing a build-time environment variable, expecting a new JS bundle.
+* **Steps Taken**: `assembleRelease` with the new value set. Read the task summary: the bundle task came back `UP-TO-DATE`; only 4 tasks executed.
+* **Expected vs Actual**: Expected a bundle rebuild, since the bundle's *contents* depend on the environment. Gradle's up-to-date check is correctly keyed on declared **input files**, and an environment variable is not a file — so from Gradle's point of view nothing changed, and it packaged the previously built bundle. The build log reads as a successful build of the new configuration. Confirmed by deleting `app/build/generated/assets` and rebuilding: 8 tasks executed and the bundle changed.
+* **Severity**: High. It compounds Entry 12 into something nearly undiagnosable — after fixing the prefix, the build *still* produced the old output, which strongly suggests the fix was wrong. Two independent silent-staleness mechanisms in series is what turned a typo-class problem into a multi-day one.
+* **Workaround**: `ops/build-release-live.cmd` deletes the generated assets directory before building, so the bundle task can never be considered up to date.
+* **Suggested Fix**: The bundle task should declare the `EXPO_PUBLIC_*` environment (or a hash of it) as a Gradle task input via `@Input`. That is a few lines in the plugin and it makes the up-to-date check correct rather than merely fast. Failing that, log the resolved bundle inputs when the task is skipped.
+
+---
+
+### Entry 14: `hasTVPreferredFocus` on the wrong control silently makes another control unreachable by D-pad
+* **Task Attempted**: Use the new LIVE/DEMO toggle on the System Status screen with a television remote (`adb shell input keyevent`), as a viewer would.
+* **Steps Taken**: Opened System Status, pressed DPAD_DOWN, DPAD_UP, DPAD_LEFT, DPAD_RIGHT in every combination from the initial focus position, screenshotting after each.
+* **Expected vs Actual**: Expected to reach the toggle. The focus ring never arrived at it. Initial focus was on "Refresh Status" near the bottom of the page, DOWN from there reaches "Back to Catalog", and no path walks *upward* into the status cards where the toggle lives. The toggle rendered correctly, passed its component test, and was — for a person holding a remote — not present.
+* **Severity**: High. This is a whole-feature outage that is invisible to every form of testing we had. A component test asserts the element exists; it cannot assert that a viewer can get to it. And on a television there is no pointer fallback: unreachable means absent.
+* **Workaround**: Moved `hasTVPreferredFocus` to the toggle and removed it from "Refresh Status" — only one element per screen should claim it — then re-verified on the emulator with real keyevents.
+* **Suggested Fix**:
+  1. **A dev-mode warning when more than one mounted element claims `hasTVPreferredFocus`.** Today the behaviour is undefined and silent.
+  2. **A reachability assertion for tests.** Something equivalent to *"from initial focus, every focusable element on this screen is reachable by D-pad"* would catch this class of bug in CI. Right now the only way to find it is to drive a running emulator and look at screenshots, which is exactly what a solo entrant skips when short on time.
+
+---
+
+### Entry 15: Nova Pro's self-reported confidence carries no information, and nothing says so
+* **Task Attempted**: Use the model's own `confidence` value to decide which generated descriptions needed human review, so review effort could be spent where the model was unsure.
+* **Steps Taken**: Authored all 44 description lines with one `InvokeModel` call per frame, asking for a confidence score alongside each description. Then reviewed every line against the frame it was written from, and compared the review outcome to the reported score.
+* **Expected vs Actual**: Expected the score to correlate with correctness at least weakly. It did not correlate at all. Across the track, **19 of 34 observations were correct unaided and 15 were wrong**, and the scores did not separate the two groups. The sharpest case: two calls on the *same frame* both returned `0.95`, and both descriptions omitted the blizzard that fills the shot. Related and more serious for accessibility: shown a low-information or procedurally-drawn frame, the model does not abstain — it produces a confident description of something else.
+* **Severity**: Medium for us, high for the pattern. We had the review budget to catch it. A team that ships "only review below 0.8" — an obvious and sensible-looking design — ships confident fiction to blind viewers, which is worse than shipping nothing.
+* **Workaround**: Discarded the score entirely. Every line is reviewed by a human against its own frame, and the review outcome is recorded per line in the track's provenance file; the published accuracy figure is derived from those labels by script, never typed in.
+* **Suggested Fix**: Either expose a calibrated uncertainty for multimodal outputs, or state plainly in the model documentation that a self-reported confidence field is unvalidated and must not be used for routing. Separately, a first-class "insufficient visual evidence" response — a way for the model to decline a frame instead of inventing against it — would be the single most valuable addition to Nova Pro for accessibility work.

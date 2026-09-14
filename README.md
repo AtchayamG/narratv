@@ -320,14 +320,19 @@ graph TD
 | **Total** | | | **~$0.37** |
 
 Calculated from published AWS rates ([`docs/02-product/sources.md`](./docs/02-product/sources.md)),
-not measured — live execution is still pending. This is **cloud cost only**; a
-production deployment should budget human QA review on top, and we would not
-claim otherwise.
+**projected, not billed**. The live usage that actually happened is smaller and
+of a different shape: the Nova Pro calls that authored this track, plus the
+`/describe` calls from the device. We have not reconciled a bill against the
+projection and do not claim to have.
+
+This is **cloud cost only**. Given that 15 of 34 model observations needed
+correcting, a production deployment must budget human review on top — and on the
+evidence here that review is not optional.
 
 ## Running it
 
 ```powershell
-ops\test-all.cmd          # 22 suites / 87 tests across 4 workspaces
+ops\test-all.cmd          # 24 suites / 117 tests across 4 workspaces
 ops\build-release.cmd     # signed release APK for Fire OS / Android TV
 ops\test.cmd              # app suites only
 ```

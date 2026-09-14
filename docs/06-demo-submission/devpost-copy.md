@@ -79,15 +79,17 @@ what it cannot do.
 2. Play *Sintel*. Real H.264 streaming, clock driven by `onProgress` — never a
    timer.
 3. The film's first spoken line is at **1:47.250**. The 107 seconds before it are
-   dialogue-free, and NarraTV describes that opening: ten lines, each landing in
-   real silence.
-4. Each line is spoken by the best voice the device offers, with the film ducked
+   dialogue-free, and NarraTV describes that opening in real silence.
+4. All **13** dialogue-free gaps in the film carry descriptions — **44 lines**,
+   every one written from a frame pulled out of the same cut the app streams.
+5. Each line is spoken by the best voice the device offers, with the film ducked
    to 25% underneath it, and captioned in a slim lower third that never covers
    the picture.
-5. When a line will not fit before the next cue, the screen shows
-   **`SKIPPED · NO GAP`** instead of speaking.
-6. The HUD reads **AD 10/12 · OVERLAPS 0** — described gaps over real gaps. Not
-   a fabricated 100%.
+6. **42 of the 44 lines play. Two are refused at runtime** and the screen shows
+   **`SKIPPED · NO GAP`** over the picture, because the gap is shorter than the
+   line takes to speak. The refusal is the feature.
+7. The HUD counts described gaps over real gaps and overlaps at zero — computed
+   from the track at runtime, never a fabricated 100%.
 
 ---
 
@@ -142,6 +144,19 @@ Mean absolute error across the ten opening descriptions: **0.20s**.
 and **Amazon Polly Neural** (text → speech). DEMO mode throws *before* any SDK
 call, so a demo build cannot silently masquerade as live.
 
+**It is deployed, and you can check it without installing anything:**
+
+```
+GET https://oqxbh0hegf.execute-api.us-east-1.amazonaws.com/health
+{"mode":"live","providers":{"bedrock":"ok","polly":"ok","s3":"ok"}}
+```
+
+`POST /describe` with a real frame returns a Nova Pro description in about two
+seconds. The television reaches it over plain `fetch()`, which is the point of
+the shape: **no AWS credentials ever go on the device.** On the System Status
+screen, "Switch to LIVE (AWS Bedrock)" flips the running app over at runtime and
+the status line reads CONNECTED / NOVA PRO — no rebuild, no env var.
+
 ---
 
 ## Challenges we ran into
@@ -184,13 +199,52 @@ one take came back completely black and only the luma check caught it.
 its production build; every React Native Testing Library render threw. The test
 scripts now pin `NODE_ENV=test`.
 
+**LIVE mode had never once run, in any build we ever shipped.** The feature was
+written, tested and documented; the switch was an env var read at build time.
+Three separate mechanisms had to line up, and all three quietly did not:
+
+1. `babel-preset-expo` inlines **only** variables prefixed `EXPO_PUBLIC_`. Ours
+   was not, so `process.env.API_URL` compiled to `undefined` in the bundle.
+2. After renaming it, still nothing. `api.cache(true)` in `babel.config.js`
+   makes Babel's transform cache **insensitive to the environment**, so the
+   inlined value was served from a cache keyed on a run that never had it.
+3. Gradle's JS bundle task keys on **input files**. Changing an env var changes
+   no file, so the task came back `UP-TO-DATE` and shipped the previous bundle.
+
+Each layer is individually reasonable and the combination is silent: no warning,
+no error, and a perfectly green test suite, because the tests read the same
+`undefined` the app did. We stopped fighting it and removed env vars from the
+path entirely — a committed constant plus a **runtime** toggle on the System
+Status screen. The first test in `config-env-prefix.test.ts` now asserts that
+`config.ts` contains no `process.env` at all.
+
+**A control a remote cannot reach does not exist.** With the toggle finally on
+screen, it was still unusable: focus landed on "Refresh Status" at the bottom of
+the page, and no D-pad path walked upward into the cards. Reading the component
+tree would never have shown this. Driving the emulator with real `adb` keyevents
+did — the focus ring simply never arrived.
+
+**We measured the model instead of trusting it, and it cost us.** Every one of
+the 44 Bedrock-written lines was re-checked against the frame it was written
+from: **19 of 34 observations were right unaided, 15 were wrong and corrected.**
+The same audit turned on our own hand-written opening gap, which had been
+labelled verified and then never re-checked — **4 of its 10 lines described a
+scene the film does not contain.** Worth recording: the model's self-reported
+confidence carried no information at all. Two calls on the same frame both
+returned `0.95`, and both missed a blizzard filling the shot.
+
 ---
 
 ## Accomplishments
 
 - **Mean sync error 0.20s**, measured and logged by the app itself rather than
   eyeballed.
-- **22 suites / 87 tests** green across four workspaces.
+- **24 suites / 117 tests** green across four workspaces.
+- **Complete description coverage on a real film**: all 13 dialogue-free gaps,
+  44 lines, every line written from a frame — and two of them refused on air,
+  out loud, because they did not fit.
+- **A live AWS path a judge can hit from a browser**, and a runtime LIVE/DEMO
+  switch on the television that needs no rebuild and carries no credentials.
 - Every refusal is a named test, not a comment.
 - Estimated **~$0.37** in cloud cost for a full 90-minute track, against
   $1,350–6,750 for the human equivalent.
@@ -211,18 +265,24 @@ especially in a product whose entire value is a trust claim to blind viewers.
 
 Honest current limitations, stated plainly:
 
-- **Live AWS is unverified.** The account activated on 2026-09-03; credentials
-  and Bedrock model access are still pending, so Bedrock and Polly are exercised
-  through `aws-sdk-client-mock`, not live calls. DEMO mode fails loud rather
-  than faking it.
-- **Coverage is one gap of twelve, by design.** Describing the rest honestly
-  requires authoring against frames — which is what LIVE mode is for.
+- **The model is wrong often enough that a human has to read every line.**
+  19 of 34 observations were right unaided. A track shipped straight out of Nova
+  Pro would confidently describe things that are not on screen. Today the review
+  step is a person; that is the honest state of the art, and pretending
+  otherwise is the one thing this project refuses to do.
+- **Voicing on device is the operating system's TTS, not Polly.** Polly Neural
+  is verified as a real call and is what the pipeline synthesises with, but the
+  demo speaks through the television's own engine. Swapping the playback path to
+  pre-synthesised Polly audio is next.
+- **One film, one language.** The track that exists is *Sintel* in English. The
+  entire argument of the project is the Tamil viewer in that opening screenshot,
+  and she is still silent. Per-language authoring is the next build.
 - **AI description is not as good as a skilled human describer.** We are not
   claiming parity. The claim is coverage of what a human will never be paid to
   describe.
-- Next: live Bedrock authoring for gaps 1–11, Polly Neural voicing in place of
-  device TTS, and per-language description so the Tamil dub in that opening
-  screenshot stops being silent.
+- **Not on real Fire TV hardware.** Developed and demonstrated on the Android TV
+  emulator, API 30, 1080p — which the hosts confirmed is an acceptable demo
+  target. Sideloading to a physical Fire TV Stick is untested.
 
 ---
 
