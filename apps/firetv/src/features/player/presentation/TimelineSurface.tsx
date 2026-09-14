@@ -134,24 +134,46 @@ export const TimelineSurface: React.FC<TimelineSurfaceProps> = ({
   );
 };
 
+/**
+ * The timeline is an OVERLAY, not a dock.
+ *
+ * It used to be a sibling of the video surface in a column, 240dp tall. On a
+ * 1080p Fire TV at 2x density that is 480 real pixels - it took forty-five
+ * percent of the screen and pushed the film into a letterbox inside a
+ * letterbox: the surface went to 16:9-minus-the-panel, so `resizeMode="contain"`
+ * fitted a 2.39:1 film by height and put black bars down both sides as well.
+ * A viewer opening a diagnostic panel expects to see the panel, not to lose the
+ * picture.
+ *
+ * Now it floats over the bottom of a full-screen video at 168dp, and the
+ * player lifts its own chrome above it while it is open.
+ */
+export const TIMELINE_OVERLAY_HEIGHT = 168;
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: TIMELINE_OVERLAY_HEIGHT,
+    backgroundColor: 'rgba(15, 23, 42, 0.92)',
     borderTopWidth: 2,
     borderTopColor: colors.border,
     paddingHorizontal: spacing.tvSafeHorizontal,
-    paddingVertical: spacing.md,
-    height: 240
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    zIndex: 12
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm
+    marginBottom: 2
   },
   headerTitle: {
     ...typography.sectionTitle,
-    fontSize: 22,
+    fontSize: 17,
     color: colors.textPrimary
   },
   legendRow: {
@@ -174,29 +196,34 @@ const styles = StyleSheet.create({
     color: colors.textSecondary
   },
   trackBar: {
-    height: 8,
+    height: 6,
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.full,
-    marginVertical: spacing.sm,
+    marginVertical: 6,
     position: 'relative'
   },
   playhead: {
     position: 'absolute',
-    top: -4,
-    width: 16,
-    height: 16,
+    top: -3,
+    width: 12,
+    height: 12,
     borderRadius: radii.full,
     backgroundColor: colors.primary,
-    marginLeft: -8
+    marginLeft: -6
   },
   blockScroll: {
-    gap: spacing.md,
-    paddingVertical: 4
+    gap: spacing.sm,
+    paddingVertical: 2
   },
   blockCard: {
-    width: 260,
-    height: 140,
-    padding: spacing.md,
+    width: 232,
+    // 104 is not arbitrary. The card carries a badge row, two lines of
+    // description and one line of placement rule; at 96 the rule line clipped
+    // against the card edge, and the rule is the proof a judge is meant to
+    // read. 104 still leaves the whole panel inside TIMELINE_OVERLAY_HEIGHT:
+    // 12 padding + 24 header + 18 track bar + 4 scroll inset + 104 = 162 of 168.
+    height: 104,
+    padding: spacing.sm,
     justifyContent: 'space-between'
   },
   dialogueCard: {

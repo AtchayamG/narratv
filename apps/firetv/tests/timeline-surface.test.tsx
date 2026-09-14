@@ -1,6 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { TimelineSurface } from '../src/features/player/presentation/TimelineSurface';
+import {
+  TimelineSurface,
+  TIMELINE_OVERLAY_HEIGHT
+} from '../src/features/player/presentation/TimelineSurface';
 import { Description, SubtitleCue } from '@narratv/contracts';
 
 describe('TimelineSurface Component (Judge-Visible Proof Map)', () => {
@@ -51,5 +54,33 @@ describe('TimelineSurface Component (Judge-Visible Proof Map)', () => {
     expect(screen.getByText('Skipped: no-gap')).toBeTruthy();
     expect(screen.getByText('A girl walks silently through snow.')).toBeTruthy();
     expect(screen.getByText('Hello, welcome to Sintel.')).toBeTruthy();
+  });
+
+  test('floats over the video instead of docking beside it', () => {
+    // This panel was a 240dp sibling of the video surface, which on a 1080p
+    // Fire TV at 2x density ate 480 real pixels - nearly half the screen - and
+    // squeezed a 2.39:1 film into bars on all four sides. It is an overlay now,
+    // and it has to stay one.
+    const { toJSON } = render(
+      <TimelineSurface
+        descriptions={mockDescriptions}
+        subtitles={mockSubtitles}
+        currentTimeSec={2.0}
+        durationSec={60.0}
+        onSelectDescription={jest.fn()}
+      />
+    );
+
+    const root: any = toJSON();
+    const style = Array.isArray(root.props.style)
+      ? Object.assign({}, ...root.props.style.filter(Boolean))
+      : root.props.style;
+
+    expect(style.position).toBe('absolute');
+    expect(style.bottom).toBe(0);
+    expect(style.height).toBe(TIMELINE_OVERLAY_HEIGHT);
+
+    // A third of a 1080p screen is the ceiling. Past that it is a dock again.
+    expect(TIMELINE_OVERLAY_HEIGHT).toBeLessThanOrEqual(180);
   });
 });

@@ -69,10 +69,21 @@ describe('DI & Data Layer Isolation', () => {
     // hand from frames, the rest by Bedrock from frames - so this asserts the
     // model is one of the two authors that actually exist, never a vague or
     // aspirational label.
+    // Each label says exactly what happened to the line, because the
+    // difference between them is the model's accuracy score:
+    //   (bare)                        shipped as the author wrote it
+    //   + referent-normalised         only a character's name changed
+    //   + human-corrected            corrected after review, reason recorded
+    //   + human-rewritten-from-frame  the author was wrong about the frame
+    // Collapsing any two of these is how an earlier revision came to report
+    // two different figures for the same accuracy question.
     const ALLOWED_AUTHORS = [
       'human-verified-frames',
+      'human-rewritten-from-frame',
       'amazon.nova-pro-v1:0',
-      'amazon.nova-pro-v1:0 + human-corrected'
+      'amazon.nova-pro-v1:0 + referent-normalised',
+      'amazon.nova-pro-v1:0 + human-corrected',
+      'amazon.nova-pro-v1:0 + human-rewritten-from-frame'
     ];
     for (const d of descriptions.filter(x => x.status !== 'skipped')) {
       expect(d.frameRef).toMatch(/^sintel@\d{2}:\d{2}$/);

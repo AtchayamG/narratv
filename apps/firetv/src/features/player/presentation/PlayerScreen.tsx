@@ -7,7 +7,7 @@ import { colors, typography, spacing, radii } from '../../../core/theme';
 import { TruthPill } from '../../../shared/TruthPill';
 import { Button } from '../../../shared/Button';
 import { Toast } from '../../../shared/Toast';
-import { TimelineSurface } from './TimelineSurface';
+import { TimelineSurface, TIMELINE_OVERLAY_HEIGHT } from './TimelineSurface';
 import { WhyPanel } from './WhyPanel';
 import { useScheduler } from '../domain/use-scheduler';
 import { container } from '../../../core/di';
@@ -344,7 +344,13 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             notice all sit in the bottom band, sized for a 10-foot read but
             kept to a single strip so sighted viewers are not blocked.
            ---------------------------------------------------------------- */}
-        <View style={styles.lowerThird} pointerEvents="none">
+        {/* The narration line and the control bar are both bottom-anchored, so
+            while the timeline overlay is up they ride above it rather than
+            disappearing underneath it. */}
+        <View
+          style={[styles.lowerThird, showTimeline && { bottom: 92 + TIMELINE_OVERLAY_HEIGHT }]}
+          pointerEvents="none"
+        >
           {/* Honest empty state, kept to one line so it never blocks the film. */}
           {!hasTrackDescriptions && (
             <Animated.View
@@ -405,7 +411,13 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
         </View>
 
         {/* ---- Compact auto-hiding control bar ---- */}
-        <Animated.View style={[styles.controlsBar, { opacity: chromeOpacity }]}>
+        <Animated.View
+          style={[
+            styles.controlsBar,
+            { opacity: chromeOpacity },
+            showTimeline && { bottom: spacing.xl + TIMELINE_OVERLAY_HEIGHT }
+          ]}
+        >
           <Button
             label={isPlaying ? 'Pause' : 'Play'}
             variant="primary"

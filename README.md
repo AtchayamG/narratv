@@ -129,7 +129,9 @@ Stated plainly, because a judge should not have to guess.
 | **Live AWS — Polly** | **Verified** | Real `SynthesizeSpeech` call, 2026-09-07: `Joanna`/neural, `us-east-1`, returned a 16,460-byte MP3. `ops-tools/verify-live-aws.cmd` |
 | **Live AWS — Bedrock** | **Verified** | Real `InvokeModel` on `amazon.nova-pro-v1:0`, `us-east-1`, 2026-09-07: returned `{"output":{"message":{"content":[{"text":"NARRATV LIVE OK"}]...}},"stopReason":"end_turn","usage":{"inputTokens":9,"outputTokens":6}}`. Blocked for ~40 min beforehand by a post-activation account hold — friction-log entry 11. `ops-tools/verify-live-aws.cmd` |
 | Description coverage | **Complete** | All **13** dialogue-free gaps carry descriptions: 44 lines, of which 42 play and **2 are refused at runtime** because the gap is shorter than the line takes to speak |
-| Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 were kept verbatim; 15 were corrected. Each corrected entry keeps the model's original wording in `draftText` with the reason — see below |
+| Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 observations were accepted as written; 15 were corrected. Counts are derived from the per-line labels by `ops-tools/apply-character-register.mjs`, never typed in — see below |
+| Character continuity | **Enforced** | One identity per character, held across all 44 lines. `apps/firetv/tests/character-continuity.test.ts` fails the build if the track calls one person two things |
+| Hand-written lines, re-audited | **4 of 10 were wrong** | The opening gap was written by hand and labelled verified, then never re-checked. Re-extracting its frames found four lines describing a scene the film does not contain. All rewritten; see `sintel-track.json.PROVENANCE.md` |
 
 ### How the track was written, and how good the model actually was
 
@@ -141,20 +143,66 @@ reply verbatim against the timestamp it came from. The model is never told the
 title, the plot, or what happens next. If a call fails, the gap stays
 undescribed rather than being filled with a guess.
 
-Then a person opened all 34 model-written lines next to their frames. **19 were
-accurate and are kept word for word. 15 were wrong or loose and were corrected.**
-Every corrected entry keeps what the model said in `draftText` alongside the
-reason, so the model's unaided accuracy stays auditable instead of being tidied
-away:
+Then a person opened all 34 model-written lines next to their frames. **19
+observations were accepted as written; 15 were wrong or loose and were
+corrected.** Every corrected entry keeps what the model said in `draftText`
+alongside the reason, so the model's unaided accuracy stays auditable instead of
+being tidied away:
 
 | frame | Nova Pro wrote | what was wrong |
 |---|---|---|
-| `06:41` | "A woman holds a spear and **smiles** in a **dark** landscape." | She is snarling, and the fog is near-white |
+| `06:41` | "A woman holds a spear and **smiles** in a **dark** landscape." | The fog is near-white, not dark. She is plainly not smiling — but the shipped line claims no expression at all rather than swapping one guess for another, because a single still is exactly the wrong evidence for a face |
 | `07:29` | "An old man with a beard and **glasses**." | No glasses; he wears an ornate headdress |
 | `07:00` | "**Dark** frame with a faint outline of a mountain." | The frame is pale fog |
 | `12:12` | "A young woman **walks towards a small dragon**." | The creature is large and lying still; motion inferred from a still image |
 
-The pattern is consistent and worth stating plainly: the model is reliable on
+### One character, one name
+
+A description track can be accurate line by line and still fail the person
+listening to it. This one did, for three revisions.
+
+The same protagonist was called "a figure", "she", "a young woman", "the young
+woman", "a woman with red hair", "a woman with short red hair" and "a gaunt
+woman". Every one of those lines was accurate about its own frame. Together they
+were useless: a sighted viewer sees one character walk through a film, and a
+listener had no way to tell whether those were one person or seven. The adult
+dragon was "a creature", "a large creature" and "a huge dark wing" across five
+lines of the same fight.
+
+`v4.0` holds one identity per character — Sintel, the warrior, the small dragon,
+the shaman, the dragon — each introduced once by what is visible, then never
+renamed. Her name is withheld until **96 s**, where the film puts SINTEL on
+screen, so the description never hands a blind viewer something a sighted viewer
+does not yet have. An earlier attempt withheld it until 457.8 s, the first time
+dialogue speaks it; that bought a reveal nobody wanted at the cost of seven
+minutes of drift, and was reverted.
+
+Two guards keep it: `ops-tools/apply-character-register.mjs` refuses to write the
+track if a banned referent survives or the name appears too early, and
+`character-continuity.test.ts` asserts the same invariants in CI.
+
+### The audit that found our own work wrong
+
+The first review checked all 34 Bedrock lines. It did **not** re-check the ten
+hand-written lines in the opening gap, because those were already labelled
+`human-verified-frames`.
+
+Re-extracting those frames found **four of the ten describing a scene that is
+not in the film.** The track said she wades alone through drifts past a stone
+structure, stops with a spear behind her, then lies face down while an old man
+in worn robes takes her hand. The frames show a fight: a bald warrior in dark
+leathers drives her backwards, they square off across the slope, and he bears
+down on her with her own spear between them. No old man. No stone structure.
+She is on her feet.
+
+Sintel opens on the fight that starts its story, and this track described it as
+a quiet walk. That is the same failure the fabricated `v1` was thrown out for,
+and it survived two revisions because a provenance label was treated as
+evidence. **A label is a claim about process, not a certificate of accuracy —
+only the frame settles it.** All four are rewritten, each carrying its previous
+wording and the reason.
+
+The pattern across both audits is consistent and worth stating plainly: the model is reliable on
 **what is in frame** and unreliable on **expression and motion**, which a single
 still cannot carry. For audio description that distinction matters more than
 raw accuracy — telling a blind viewer that a snarling character is smiling is

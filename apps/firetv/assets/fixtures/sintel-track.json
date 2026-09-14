@@ -1,6 +1,6 @@
 {
   "titleId": "sintel",
-  "revision": "v3.1",
+  "revision": "v4.0",
   "status": "ai-draft",
   "descriptions": [
     {
@@ -56,48 +56,64 @@
       "tStart": 36,
       "tEnd": 41.4,
       "durationSec": 5.4,
-      "text": "A figure in a heavy hooded coat pushes through the driving snow.",
+      "text": "A hooded traveller pushes into the blizzard, one arm raised against the snow.",
       "confidence": 1,
-      "frameRef": "sintel@00:38",
-      "model": "human-verified-frames",
+      "frameRef": "sintel@00:36",
+      "model": "human-rewritten-from-frame",
       "status": "verified",
-      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 00:38 of the real stream."
+      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 00:38 of the real stream.",
+      "continuityFrom": [
+        "A figure in a heavy hooded coat pushes through the driving snow."
+      ],
+      "correctionReason": "Old line said \"a figure in a heavy hooded coat pushes through the driving snow\" - close, but the coat is not the detail that matters and the arm shielding the face is. Kept as the honest pre-identification line."
     },
     {
       "id": "sintel-ad-06",
       "tStart": 44,
       "tEnd": 48.56,
       "durationSec": 4.56,
-      "text": "She wades through deep drifts past a dark stone structure.",
+      "text": "A bald warrior in dark leathers drives her backwards through the snow.",
       "confidence": 1,
       "frameRef": "sintel@00:44",
-      "model": "human-verified-frames",
+      "model": "human-rewritten-from-frame",
       "status": "verified",
-      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 00:44 of the real stream."
+      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 00:44 of the real stream.",
+      "continuityFrom": [
+        "She wades through deep drifts past a dark stone structure."
+      ],
+      "correctionReason": "Old line said \"she wades through deep drifts past a dark stone structure\". The frame at 44s has two people in it and no structure: a heavy dark-clad figure with its back to camera forcing a lighter-clad figure off balance. The film opens on a fight, not a walk."
     },
     {
       "id": "sintel-ad-07",
       "tStart": 58,
       "tEnd": 63.4,
       "durationSec": 5.4,
-      "text": "She stops in the open snow. A long spear lies behind her.",
+      "text": "The two of them stand apart on the snow slope, almost lost in the fog.",
       "confidence": 1,
-      "frameRef": "sintel@01:02",
-      "model": "human-verified-frames",
+      "frameRef": "sintel@00:58",
+      "model": "human-rewritten-from-frame",
       "status": "verified",
-      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:02 of the real stream."
+      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:02 of the real stream.",
+      "continuityFrom": [
+        "She stops in the open snow. A long spear lies behind her."
+      ],
+      "correctionReason": "Old line said \"she stops in the open snow. A long spear lies behind her.\" The frame at 58s shows both of them, separated across the slope in whiteout - the spear is not on the ground."
     },
     {
       "id": "sintel-ad-08",
       "tStart": 70,
       "tEnd": 78.77,
       "durationSec": 8.77,
-      "text": "She lies face down in the snow. An old man in worn robes kneels over her and takes her hand.",
+      "text": "The warrior bears down on her, her long spear between them, and she grips the shaft with both hands.",
       "confidence": 1,
       "frameRef": "sintel@01:10",
-      "model": "human-verified-frames",
+      "model": "human-rewritten-from-frame",
       "status": "verified",
-      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:10 of the real stream."
+      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:10 of the real stream.",
+      "continuityFrom": [
+        "She lies face down in the snow. An old man in worn robes kneels over her and takes her hand."
+      ],
+      "correctionReason": "Old line said \"she lies face down in the snow. An old man in worn robes kneels over her and takes her hand.\" There is no old man in this frame. It is the warrior from 44s, she is upright against the slope with red hair loose, and the spear is held across them both. This was the single worst line in the track."
     },
     {
       "id": "sintel-ad-09",
@@ -116,12 +132,16 @@
       "tStart": 96,
       "tEnd": 99.3,
       "durationSec": 3.3,
-      "text": "The view drifts across the frozen valley.",
+      "text": "The title appears: Sintel. Below it she walks on alone, sword drawn.",
       "confidence": 1,
-      "frameRef": "sintel@01:39",
-      "model": "human-verified-frames",
+      "frameRef": "sintel@01:36",
+      "model": "human-rewritten-from-frame",
       "status": "verified",
-      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:39 of the real stream."
+      "placementRule": "Gap 0 (0.0-106.95s), the film's dialogue-free opening. Written from the frame at 01:39 of the real stream.",
+      "continuityFrom": [
+        "The view drifts across the frozen valley."
+      ],
+      "correctionReason": "Old line said only \"the view drifts across the frozen valley\" and dropped the title card that is the largest thing in the frame. This card is also where the film gives the audience her name, so it is where the description starts using it."
     },
     {
       "id": "sintel-ad-11",
@@ -142,52 +162,68 @@
       "tStart": 157.67,
       "tEnd": 164.34,
       "durationSec": 6.67,
-      "text": "A young woman with cropped red hair walks through a narrow alley of damaged buildings.",
+      "text": "Sintel walks through a narrow alley of damaged buildings.",
       "confidence": 0.9,
       "frameRef": "sintel@02:38",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 02:38 of the real stream.",
-      "continuityFrom": "Woman walks through narrow alley with damaged buildings."
+      "continuityFrom": [
+        "Woman walks through narrow alley with damaged buildings.",
+        "A young woman with cropped red hair walks through a narrow alley of damaged buildings."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-13",
       "tStart": 179.31,
       "tEnd": 183.87,
       "durationSec": 4.56,
-      "text": "She leaps along a rooftop ledge above the narrow street.",
+      "text": "Sintel leaps along a rooftop ledge above the narrow street.",
       "confidence": 1,
       "frameRef": "sintel@02:59",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 02:59 of the real stream.",
       "draftText": "A person jumps from a building to another building.",
-      "correctionReason": "inferred a jump between two buildings; she is on one roof"
+      "correctionReason": "inferred a jump between two buildings; she is on one roof",
+      "continuityFrom": [
+        "She leaps along a rooftop ledge above the narrow street."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-14",
       "tStart": 200.95,
       "tEnd": 204.25,
       "durationSec": 3.3,
-      "text": "A hand reaches toward a small dragon.",
+      "text": "Sintel reaches a hand toward a small dragon.",
       "confidence": 0.9,
       "frameRef": "sintel@03:21",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
-      "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 03:21 of the real stream."
+      "placementRule": "Gap 2 (156.17-206.95s). Written by amazon.nova-pro-v1:0 from the frame at 03:21 of the real stream.",
+      "continuityFrom": [
+        "A hand reaches toward a small dragon."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-15",
       "tStart": 218.63,
       "tEnd": 223.19,
       "durationSec": 4.56,
-      "text": "The young woman holds a small dragon in her hands.",
+      "text": "Sintel cradles the small dragon in her hands.",
       "confidence": 0.9,
       "frameRef": "sintel@03:39",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 3 (213.8-227.95s). Written by amazon.nova-pro-v1:0 from the frame at 03:39 of the real stream.",
-      "continuityFrom": "A young woman holds a small dragon in her hands."
+      "continuityFrom": [
+        "A young woman holds a small dragon in her hands.",
+        "The young woman holds a small dragon in her hands."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-16",
@@ -206,21 +242,25 @@
       "tStart": 257.3,
       "tEnd": 263.97,
       "durationSec": 6.67,
-      "text": "A broad-shouldered man and a blonde woman watch her walk away down the market lane.",
+      "text": "A broad-shouldered man and a blonde woman watch Sintel walk away down the market lane.",
       "confidence": 1,
       "frameRef": "sintel@04:17",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 5 (254.15-264.95s). Written by amazon.nova-pro-v1:0 from the frame at 04:17 of the real stream.",
       "draftText": "A man stands in front of two women.",
-      "correctionReason": "counted three people as \"a man and two women\"; the third is walking away"
+      "correctionReason": "counted three people as \"a man and two women\"; the third is walking away",
+      "continuityFrom": [
+        "A broad-shouldered man and a blonde woman watch her walk away down the market lane."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-18",
       "tStart": 270.05,
       "tEnd": 274.61,
       "durationSec": 4.56,
-      "text": "The young woman looks up, stalls and awnings behind her.",
+      "text": "Sintel looks up, stalls and awnings behind her.",
       "confidence": 1,
       "frameRef": "sintel@04:30",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
@@ -228,20 +268,28 @@
       "placementRule": "Gap 6 (268.55-303.7s). Written by amazon.nova-pro-v1:0 from the frame at 04:30 of the real stream.",
       "draftText": "A woman with red hair stands in front of a building.",
       "correctionReason": "\"stands in front of a building\" missed that it is a market and that she looks up",
-      "continuityFrom": "A red-haired young woman looks up, stalls and awnings behind her."
+      "continuityFrom": [
+        "A red-haired young woman looks up, stalls and awnings behind her.",
+        "The young woman looks up, stalls and awnings behind her."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-19",
       "tStart": 297.7,
       "tEnd": 302.26,
       "durationSec": 4.56,
-      "text": "The young woman stands on a cliff overlooking a city.",
+      "text": "Sintel stands on a cliff overlooking a city.",
       "confidence": 0.9,
       "frameRef": "sintel@04:58",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 6 (268.55-303.7s). Written by amazon.nova-pro-v1:0 from the frame at 04:58 of the real stream.",
-      "continuityFrom": "A young woman stands on a cliff overlooking a city."
+      "continuityFrom": [
+        "A young woman stands on a cliff overlooking a city.",
+        "The young woman stands on a cliff overlooking a city."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-20",
@@ -274,54 +322,69 @@
       "tStart": 343.8,
       "tEnd": 347.94,
       "durationSec": 4.14,
-      "text": "The young woman, tattooed, stands in a ruined city.",
+      "text": "Sintel, tattooed, stands in a ruined city.",
       "confidence": 0.9,
       "frameRef": "sintel@05:44",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 05:44 of the real stream.",
-      "continuityFrom": "A woman with red hair and tattoos stands in a ruined city."
+      "continuityFrom": [
+        "A woman with red hair and tattoos stands in a ruined city.",
+        "The young woman, tattooed, stands in a ruined city."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-23",
       "tStart": 362.95,
       "tEnd": 368.35,
       "durationSec": 5.4,
-      "text": "Her face fades over a bare hillside where a small figure climbs.",
+      "text": "Sintel's face fades over a bare hillside where a small figure climbs.",
       "confidence": 1,
       "frameRef": "sintel@06:03",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 06:03 of the real stream.",
       "draftText": "A woman with bangs looks to the left.",
-      "correctionReason": "missed the dissolve entirely and misread the direction of her gaze"
+      "correctionReason": "missed the dissolve entirely and misread the direction of her gaze",
+      "continuityFrom": [
+        "Her face fades over a bare hillside where a small figure climbs."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-24",
       "tStart": 382.1,
       "tEnd": 385.82,
       "durationSec": 3.72,
-      "text": "The young woman stands in a bamboo forest.",
+      "text": "Sintel stands in a bamboo forest.",
       "confidence": 0.9,
       "frameRef": "sintel@06:22",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 06:22 of the real stream.",
-      "continuityFrom": "Woman with red hair stands in bamboo forest."
+      "continuityFrom": [
+        "Woman with red hair stands in bamboo forest.",
+        "The young woman stands in a bamboo forest."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-25",
       "tStart": 401.25,
       "tEnd": 406.65,
       "durationSec": 5.4,
-      "text": "A gaunt woman grips a staff and snarls in thick pale fog.",
+      "text": "Sintel, hollow-cheeked and travel-worn, grips her spear in thick pale fog.",
       "confidence": 1,
       "frameRef": "sintel@06:41",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + human-rewritten-from-frame",
       "status": "verified",
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 06:41 of the real stream.",
       "draftText": "A woman holds a spear and smiles in a dark landscape.",
-      "correctionReason": "said she smiles when she is snarling, and called pale fog a dark landscape"
+      "correctionReason": "Old line called her \"a gaunt woman\" and the first continuity pass explicitly protected that as a different character. That was wrong. The wide shot at 396s and the close-ups at 399-405s are one continuous shot of one traveller on a foggy ridge with a spear planted beside her; the spear matches the weapon in the opening fight at 70s; and she is the only traveller in a montage whose other shots (372s desert, 420s snow) each hold a single figure. Refusing to name her here was not caution, it was the drift.",
+      "continuityFrom": [
+        "A gaunt woman grips a staff and snarls in thick pale fog."
+      ]
     },
     {
       "id": "sintel-ad-26",
@@ -342,7 +405,7 @@
       "tStart": 439.55,
       "tEnd": 444.11,
       "durationSec": 4.56,
-      "text": "The young woman stands in a dark room, looking down.",
+      "text": "Sintel stands in a dark room, looking down.",
       "confidence": 1,
       "frameRef": "sintel@07:20",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
@@ -350,21 +413,29 @@
       "placementRule": "Gap 8 (342.3-445.55s). Written by amazon.nova-pro-v1:0 from the frame at 07:20 of the real stream.",
       "draftText": "A woman with red hair looks to the right.",
       "correctionReason": "misread her gaze and dropped the setting",
-      "continuityFrom": "A red-haired young woman stands in a dark room, looking down."
+      "continuityFrom": [
+        "A red-haired young woman stands in a dark room, looking down.",
+        "The young woman stands in a dark room, looking down."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-28",
       "tStart": 449.3,
       "tEnd": 455.12,
       "durationSec": 5.82,
-      "text": "An old man with a white beard and an ornate headdress looks down.",
+      "text": "A white-bearded old man in an ornate headdress looks down at her - the shaman.",
       "confidence": 1,
       "frameRef": "sintel@07:29",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 9 (447.8-452.5s). Written by amazon.nova-pro-v1:0 from the frame at 07:29 of the real stream.",
       "draftText": "An old man with a beard and glasses looks down.",
-      "correctionReason": "invented glasses; he wears a decorated headpiece"
+      "correctionReason": "invented glasses; he wears a decorated headpiece",
+      "continuityFrom": [
+        "An old man with a white beard and an ornate headdress looks down."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-29",
@@ -374,10 +445,12 @@
       "text": "Sintel looks to the side.",
       "confidence": 0.9,
       "frameRef": "sintel@07:46",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 07:46 of the real stream.",
-      "continuityFrom": "A woman with short red hair looks to the side."
+      "continuityFrom": [
+        "A woman with short red hair looks to the side."
+      ]
     },
     {
       "id": "sintel-ad-30",
@@ -387,34 +460,44 @@
       "text": "A tattoo shows on Sintel's shoulder.",
       "confidence": 0.9,
       "frameRef": "sintel@08:03",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:03 of the real stream.",
-      "continuityFrom": "Woman with short hair and tattoo on her shoulder."
+      "continuityFrom": [
+        "Woman with short hair and tattoo on her shoulder."
+      ]
     },
     {
       "id": "sintel-ad-31",
       "tStart": 500,
       "tEnd": 504.14,
       "durationSec": 4.14,
-      "text": "A dark cave with a creature and glowing crystals.",
+      "text": "A dark cave. A large dragon lies among glowing crystals.",
       "confidence": 0.9,
       "frameRef": "sintel@08:20",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
-      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:20 of the real stream."
+      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:20 of the real stream.",
+      "continuityFrom": [
+        "A dark cave with a creature and glowing crystals."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-32",
       "tStart": 517.1,
       "tEnd": 521.66,
       "durationSec": 4.56,
-      "text": "A dark cave with a large creature in the background.",
+      "text": "The dragon lies in the background of the dark cave.",
       "confidence": 0.9,
       "frameRef": "sintel@08:37",
-      "model": "amazon.nova-pro-v1:0",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
-      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:37 of the real stream."
+      "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:37 of the real stream.",
+      "continuityFrom": [
+        "A dark cave with a large creature in the background."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-33",
@@ -424,50 +507,64 @@
       "text": "Sintel's eyes are closed.",
       "confidence": 0.9,
       "frameRef": "sintel@08:54",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 08:54 of the real stream.",
-      "continuityFrom": "A woman with red hair and closed eyes."
+      "continuityFrom": [
+        "A woman with red hair and closed eyes."
+      ]
     },
     {
       "id": "sintel-ad-34",
       "tStart": 551.3,
       "tEnd": 556.28,
       "durationSec": 4.98,
-      "text": "A huge dark wing sweeps past, lit by pale blue crystals.",
+      "text": "The dragon's wing sweeps past, lit by pale blue crystals.",
       "confidence": 1,
       "frameRef": "sintel@09:11",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 10 (464.3-557.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:11 of the real stream.",
       "draftText": "A large creature with a long snout and large eyes.",
-      "correctionReason": "described a snout and eyes that are not visible in this frame"
+      "correctionReason": "described a snout and eyes that are not visible in this frame",
+      "continuityFrom": [
+        "A huge dark wing sweeps past, lit by pale blue crystals."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-35",
       "tStart": 561.3,
       "tEnd": 564.18,
       "durationSec": 2.88,
-      "text": "Sintel crouches near a large creature.",
+      "text": "Sintel crouches near the dragon.",
       "confidence": 0.9,
       "frameRef": "sintel@09:21",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:21 of the real stream.",
-      "continuityFrom": "A woman with red hair crouches near a large creature."
+      "continuityFrom": [
+        "A woman with red hair crouches near a large creature.",
+        "Sintel crouches near a large creature."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-36",
       "tStart": 579.3,
       "tEnd": 581.76,
       "durationSec": 2.46,
-      "text": "Sintel fights the large creature.",
+      "text": "Sintel fights the dragon.",
       "confidence": 0.9,
       "frameRef": "sintel@09:39",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:39 of the real stream.",
-      "continuityFrom": "A woman with red hair is fighting a large creature."
+      "continuityFrom": [
+        "A woman with red hair is fighting a large creature.",
+        "Sintel fights the large creature."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-37",
@@ -477,38 +574,48 @@
       "text": "Sintel lies on the ground.",
       "confidence": 0.9,
       "frameRef": "sintel@09:57",
-      "model": "amazon.nova-pro-v1:0 + human-corrected",
+      "model": "amazon.nova-pro-v1:0 + referent-normalised",
       "status": "verified",
       "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 09:57 of the real stream.",
-      "continuityFrom": "A woman with red hair lies on the ground."
+      "continuityFrom": [
+        "A woman with red hair lies on the ground."
+      ]
     },
     {
       "id": "sintel-ad-38",
       "tStart": 615.3,
       "tEnd": 620.28,
       "durationSec": 4.98,
-      "text": "She looks up at a vast translucent wing arching over her.",
+      "text": "Sintel looks up at a vast translucent wing arching over her.",
       "confidence": 1,
       "frameRef": "sintel@10:15",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 11 (559.8-621.3s). Written by amazon.nova-pro-v1:0 from the frame at 10:15 of the real stream.",
       "draftText": "A woman looks at a large, transparent, alien creature.",
-      "correctionReason": "\"alien creature\" over-reads a wing"
+      "correctionReason": "\"alien creature\" over-reads a wing",
+      "continuityFrom": [
+        "She looks up at a vast translucent wing arching over her."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-39",
       "tStart": 631.6,
       "tEnd": 637,
       "durationSec": 5.4,
-      "text": "Her face lies among rubble, boots in the foreground, red light above.",
+      "text": "Sintel's face lies among rubble, boots in the foreground, red light above.",
       "confidence": 1,
       "frameRef": "sintel@10:32",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 12 (630.1-888.064s). Written by amazon.nova-pro-v1:0 from the frame at 10:32 of the real stream.",
       "draftText": "A woman's face in a dark room with feet visible.",
-      "correctionReason": "\"a dark room\" missed the rubble and the red light"
+      "correctionReason": "\"a dark room\" missed the rubble and the red light",
+      "continuityFrom": [
+        "Her face lies among rubble, boots in the foreground, red light above."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-40",
@@ -527,14 +634,18 @@
       "tStart": 731.79,
       "tEnd": 739.3,
       "durationSec": 7.51,
-      "text": "A large creature lies on the rock; a small figure sits beyond it, snowdrops in the foreground.",
+      "text": "The dragon lies still on the rock; Sintel sits beyond it, snowdrops in the foreground.",
       "confidence": 1,
       "frameRef": "sintel@12:12",
       "model": "amazon.nova-pro-v1:0 + human-corrected",
       "status": "verified",
       "placementRule": "Gap 12 (630.1-888.064s). Written by amazon.nova-pro-v1:0 from the frame at 12:12 of the real stream.",
       "draftText": "A young woman walks towards a small dragon.",
-      "correctionReason": "called a large prone creature a small dragon and inferred walking from a still"
+      "correctionReason": "called a large prone creature a small dragon and inferred walking from a still",
+      "continuityFrom": [
+        "A large creature lies on the rock; a small figure sits beyond it, snowdrops in the foreground."
+      ],
+      "continuityReason": "Referent normalised to the character register. No frame re-opened and no new observation: the line says what it said, about a person it now names consistently."
     },
     {
       "id": "sintel-ad-42",
@@ -583,26 +694,50 @@
     "overlapCount": 0,
     "describedGaps": 13,
     "generatedAt": "2026-09-07T12:51:28Z",
-    "model": "amazon.nova-pro-v1:0 (34 lines, 15 human-corrected) + human-verified-frames (10 lines)",
+    "model": "amazon.nova-pro-v1:0 (34 lines) + human (10 lines written or rewritten from frames)",
     "coverage": "Every one of the film's 13 dialogue-free gaps carries at least one description. Gap 0 was written by hand from frames; gaps 1-12 were written by Amazon Nova Pro from frames extracted at the exact timestamps named in each frameRef. Two gaps (1 at 3.25s and 9 at 4.70s) are shorter than their line takes to speak; the player refuses those at runtime rather than talking over the dialogue that follows.",
     "subtitleSource": "Official English subtitles, Wikimedia Commons TimedText:Sintel_movie_4K.webm.en.srt",
     "review": {
       "reviewedAt": "2026-09-07T12:59:56Z",
-      "method": "Every Bedrock-written line was read next to the frame it was written from.",
+      "method": "Every line was read next to the frame its own frameRef names. Bedrock lines were reviewed twice; the hand-written opening was reviewed on the second pass, which is when four of its ten lines turned out to describe a scene the film does not contain.",
       "modelLinesTotal": 34,
       "modelLinesKeptVerbatim": 19,
       "modelLinesCorrected": 15,
-      "note": "Corrected entries keep the model wording in draftText with the reason, so the model's unaided accuracy stays auditable."
+      "note": "modelObservationCorrectUnaided counts lines whose observation was accepted as written - shipped verbatim, or with nothing changed but a character name. A renamed referent is not a correction: it makes no new observation. Counting renames as corrections is what made an earlier revision report 8 of 34 lines surviving review while its own metadata said 19; the honest figure is 19, and it is derived here rather than typed.",
+      "modelObservationCorrectUnaided": 19,
+      "modelLinesShippedVerbatim": 5,
+      "modelLinesRenamedOnly": 14,
+      "modelLinesCorrectedAfterReview": 14,
+      "modelLinesRewrittenFromFrame": 1
     },
     "continuity": {
-      "appliedAt": "2026-09-14T10:22:52Z",
-      "linesEdited": 13,
-      "method": "Offline referent normalisation. No model call, no new observation. Each edited line keeps its original wording in continuityFrom.",
-      "scheme": "Introduce by appearance once; one fixed short form thereafter; the name \"Sintel\" only from 457.8s, the moment the film first speaks it.",
+      "appliedAt": "2026-09-14T11:02:23Z",
+      "scheme": "One identity per character, introduced once by what is visible, then one fixed handle for the rest of the film.",
+      "namedFrom": "Sintel is described, not named, until the film's own title card at 96s, and named in every line after it.",
+      "register": {
+        "Sintel": "protagonist - \"a hooded traveller\" / \"she\" for 36-84s, \"Sintel\" from 96s",
+        "the warrior": "bald, black goatee, dark leathers - the opening fight",
+        "the small dragon": "the dragon she rescues. Left unnamed here: the film speaks \"Scales\" at 3:48, after the last line that shows him.",
+        "the shaman": "white-bearded old man in an ornate headdress",
+        "the dragon": "the adult dragon in the cave - introduced at 8:20, \"the dragon\" thereafter"
+      },
+      "referentEdits": 20,
+      "reaccuracyEdits": 6,
+      "supersedes": "v3.1, which withheld the name until 457.8s and so left the first seven minutes calling one person five different things. It also protected the traveller at 6:41 as a separate character, which the frames do not support.",
       "notNormalised": [
-        "sintel-ad-25 - \"a gaunt woman\" is a different character, not the protagonist.",
-        "All dragon references - the small dragon and the large creature are not established as the same animal by any reviewed frame, so neither is renamed \"Scales\"."
+        "sintel-ad-20 \"two dragons\" and sintel-ad-21 \"a dark shape\" - distant, and not established as the cave dragon.",
+        "sintel-ad-23 \"a small figure climbs\" - too distant in frame to identify, and the line already names whose face dissolves over it.",
+        "sintel-ad-17 the man and the blonde woman - each appears once, so neither needs a name.",
+        "sintel-ad-44 end-credit pencil sketches - stylised cartoon figures, so \"a girl and a creature\" is the honest reading and the register does not apply to credit art."
       ]
+    },
+    "authorship": {
+      "human-verified-frames": 5,
+      "human-rewritten-from-frame": 5,
+      "amazon.nova-pro-v1:0 + human-corrected": 14,
+      "amazon.nova-pro-v1:0 + referent-normalised": 14,
+      "amazon.nova-pro-v1:0": 5,
+      "amazon.nova-pro-v1:0 + human-rewritten-from-frame": 1
     }
   }
 }
