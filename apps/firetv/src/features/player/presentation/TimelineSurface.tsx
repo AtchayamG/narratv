@@ -145,10 +145,18 @@ export const TimelineSurface: React.FC<TimelineSurfaceProps> = ({
  * A viewer opening a diagnostic panel expects to see the panel, not to lose the
  * picture.
  *
- * Now it floats over the bottom of a full-screen video at 168dp, and the
- * player lifts its own chrome above it while it is open.
+ * Now it floats over the bottom of a full-screen video at 176dp - a third of
+ * the screen rather than half - and the player lifts its own chrome above it
+ * while it is open.
+ *
+ * 176 was measured on the device, not derived on paper. A first attempt at 168
+ * with 104dp cards looked right in arithmetic and clipped the bottom row on a
+ * real 1080p panel by a few pixels, which cost the refusal card its "Refused:
+ * overlaps a real dialogue cue" line - the one piece of text that card exists
+ * to show. The badge row and the legend header are each a little taller than
+ * their font sizes suggest. Change either number against a screenshot.
  */
-export const TIMELINE_OVERLAY_HEIGHT = 168;
+export const TIMELINE_OVERLAY_HEIGHT = 176;
 
 const styles = StyleSheet.create({
   container: {
@@ -217,12 +225,12 @@ const styles = StyleSheet.create({
   },
   blockCard: {
     width: 232,
-    // 104 is not arbitrary. The card carries a badge row, two lines of
-    // description and one line of placement rule; at 96 the rule line clipped
-    // against the card edge, and the rule is the proof a judge is meant to
-    // read. 104 still leaves the whole panel inside TIMELINE_OVERLAY_HEIGHT:
-    // 12 padding + 24 header + 18 track bar + 4 scroll inset + 104 = 162 of 168.
-    height: 104,
+    // The card carries a badge row, two lines of description and one line of
+    // placement rule - and the rule is the proof a judge is meant to read, so
+    // it must not clip. 100dp fits inside the 176dp overlay with room to spare;
+    // see the note on TIMELINE_OVERLAY_HEIGHT for why this pair was measured on
+    // the device instead of calculated.
+    height: 100,
     padding: spacing.sm,
     justifyContent: 'space-between'
   },
@@ -252,20 +260,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary
   },
+  // lineHeight is pinned on all three, and that is the whole fix for the card
+  // overflowing its own height. typography.bodyMedium carries a lineHeight
+  // sized for body copy, so overriding only fontSize left each line ~24dp tall:
+  // badge row + two description lines + rule came to more than the card, and
+  // the rule - "Refused: overlaps a real dialogue cue", the one line the
+  // refusal card exists to show - spilled past the bottom edge. Setting
+  // fontSize without setting lineHeight is how that happens.
   dialogueText: {
     ...typography.bodyMedium,
     color: colors.dialogueLight,
     fontStyle: 'italic',
-    fontSize: 14
+    fontSize: 14,
+    lineHeight: 18
   },
   narrationText: {
     ...typography.bodyMedium,
     color: colors.textPrimary,
-    fontSize: 14
+    fontSize: 14,
+    lineHeight: 18
   },
   ruleSnippet: {
     ...typography.caption,
-    fontSize: 11,
+    fontSize: 10,
+    lineHeight: 13,
     color: colors.textMuted
   }
 });

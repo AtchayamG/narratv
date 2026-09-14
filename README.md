@@ -131,6 +131,7 @@ Stated plainly, because a judge should not have to guess.
 | Description coverage | **Complete** | All **13** dialogue-free gaps carry descriptions: 44 lines, of which 42 play and **2 are refused at runtime** because the gap is shorter than the line takes to speak |
 | Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 observations were accepted as written; 15 were corrected. Counts are derived from the per-line labels by `ops-tools/apply-character-register.mjs`, never typed in — see below |
 | Character continuity | **Enforced** | One identity per character, held across all 44 lines. `apps/firetv/tests/character-continuity.test.ts` fails the build if the track calls one person two things |
+| Refusal visible **in context** | **Verified on device** | `SKIPPED · NO GAP` appears over the picture at 2:26.8, holds 4s, clears. Recorded and frame-checked. Until this fix it never appeared at all — see below |
 | Hand-written lines, re-audited | **4 of 10 were wrong** | The opening gap was written by hand and labelled verified, then never re-checked. Re-extracting its frames found four lines describing a scene the film does not contain. All rewritten; see `sintel-track.json.PROVENANCE.md` |
 
 ### How the track was written, and how good the model actually was
@@ -180,6 +181,29 @@ minutes of drift, and was reverted.
 Two guards keep it: `ops-tools/apply-character-register.mjs` refuses to write the
 track if a banned referent survives or the name appears too early, and
 `character-continuity.test.ts` asserts the same invariants in CI.
+
+### The refusal nobody could see
+
+The two refused lines were refused correctly and reported honestly in two
+places — the counter pill read `2 SKIPPED`, the timeline card read
+`SKIPPED: NO-GAP` with the reason — and in the one place that matters, a viewer
+watching the film straight through, **nothing happened at all.**
+
+The cause is a seam between two layers. For a pre-placed track the repository
+resolves collisions at *load* time and stamps `status: 'skipped'`. The
+scheduler's candidate search then filters skipped entries out, so its runtime
+refusal branch could never fire for them. Both layers were right on their own
+and the feature fell down the gap between them.
+
+That is the worst possible shape for this defect, because a refusal that looks
+exactly like silence is not a refusal — it is the thing this project exists to
+argue against. The scheduler now surfaces a pre-refused line at the moment it
+would have spoken, holds the notice for 4 seconds of film time and takes it
+down. Three tests in `use-scheduler.test.ts` cover it, including one asserting
+that refusing still never licenses speaking.
+
+Verified on the device, not just in tests: at 2:26.8 `SKIPPED · NO GAP` is on
+the picture, and by 2:32 it is gone.
 
 ### The audit that found our own work wrong
 

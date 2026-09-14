@@ -348,7 +348,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             while the timeline overlay is up they ride above it rather than
             disappearing underneath it. */}
         <View
-          style={[styles.lowerThird, showTimeline && { bottom: 92 + TIMELINE_OVERLAY_HEIGHT }]}
+          style={[styles.lowerThird, showTimeline && { bottom: 84 + TIMELINE_OVERLAY_HEIGHT }]}
           pointerEvents="none"
         >
           {/* Honest empty state, kept to one line so it never blocks the film. */}

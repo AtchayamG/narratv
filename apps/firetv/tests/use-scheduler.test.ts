@@ -4,7 +4,8 @@ import {
   useScheduler,
   roomBeforeNextCue,
   LEAD_IN_SEC,
-  TAIL_GUARD_SEC
+  TAIL_GUARD_SEC,
+  REFUSAL_HOLD_SEC
 } from '../src/features/player/domain/use-scheduler';
 import { ITtsAdapter, SpeakCallbacks, estimateSpeechSec } from '../src/features/player/data/tts-adapter';
 
@@ -258,5 +259,67 @@ describe('useScheduler runtime invariants', () => {
     act(() => rerender({ t: 2.1 }));
     act(() => rerender({ t: 4.0 }));
     expect(tts.spoken).toHaveLength(0);
+  });
+
+  describe('a line refused before playback still says so on screen', () => {
+    // For a pre-placed track the repository decides collisions at LOAD time and
+    // stamps status 'skipped'. The candidate search then filters those out, so
+    // nothing about them ever reached the viewer: the counter pill said
+    // "2 SKIPPED" and the timeline card said "SKIPPED: NO-GAP", but anyone
+    // watching the film straight through saw nothing at the moment the line was
+    // refused. A refusal that looks identical to silence is not a refusal.
+    const preRefused: Description = {
+      id: 'desc-pre-refused',
+      tStart: 15.0,
+      tEnd: 18.0,
+      text: 'Near darkness. Faint wooden beams and a few small red embers.',
+      confidence: 0.9,
+      frameRef: 'f3.png',
+      model: 'fixture',
+      status: 'skipped',
+      skipReason: 'no-gap'
+    };
+
+    test('surfaces the refusal in context, and never speaks it', () => {
+      const tts = new FakeTts();
+      const { result, rerender } = setup([preRefused], tts);
+
+      act(() => rerender({ t: 14.0 }));
+      expect(result.current.refusal).toBeNull();
+
+      act(() => rerender({ t: 15.5 }));
+      expect(result.current.refusal).not.toBeNull();
+      expect(result.current.refusal?.description.id).toBe('desc-pre-refused');
+      expect(result.current.refusal?.reason).toBe('no-gap');
+
+      // The hard invariant still holds: refusing is not a licence to speak.
+      expect(tts.spoken).toHaveLength(0);
+    });
+
+    test('takes the notice down again instead of leaving it stuck', () => {
+      const tts = new FakeTts();
+      const { result, rerender } = setup([preRefused], tts);
+
+      act(() => rerender({ t: 15.5 }));
+      expect(result.current.refusal).not.toBeNull();
+
+      // Still up inside the hold window, measured from when it was raised.
+      act(() => rerender({ t: 19.0 }));
+      expect(result.current.refusal).not.toBeNull();
+
+      // Past the hold, it is gone.
+      act(() => rerender({ t: 15.5 + REFUSAL_HOLD_SEC + 0.5 }));
+      expect(result.current.refusal).toBeNull();
+    });
+
+    test('does not stop a later description that does fit', () => {
+      const tts = new FakeTts();
+      const laterFits: Description = { ...shortDesc, id: 'desc-after', tStart: 25.0, tEnd: 29.0 };
+      const { rerender } = setup([preRefused, laterFits], tts);
+
+      act(() => rerender({ t: 15.5 }));
+      act(() => rerender({ t: 25.1 }));
+      expect(tts.spoken).toEqual([laterFits.text]);
+    });
   });
 });
