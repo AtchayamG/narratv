@@ -79,16 +79,32 @@ describe('D4 — 10-Foot D-Pad Reachability and Spatial Focus Invariants', () =>
 
   /**
    * Helper that asserts TV navigation invariants on a set of interactive elements:
-   * 1. Every element has focusable={true} or accessible={true}
-   * 2. Every element has a non-empty, non-whitespace accessibilityLabel
+   * 1. Every element is actually reachable by the D-pad (focusable === true),
+   *    unless it is deliberately inert (accessibilityState.disabled === true).
+   * 2. Every element is exposed to the screen reader (accessible === true).
+   * 3. Every element has a non-empty, non-whitespace accessibilityLabel.
+   *
+   * NOTE ON (1): this used to read
+   *     `focusable === true || accessible === true`
+   * which could never fail, because Button and FocusableCard both hardcode
+   * `accessible={true}`. Setting `focusable={false}` on every Button in the app
+   * -- making every control unreachable by D-pad -- left all 9 tests in this
+   * file green across 5 consecutive runs. The two properties are now asserted
+   * separately so that losing either one fails the suite.
    */
   function verifyInteractiveElements(elements: TestInstance[]) {
     expect(elements.length).toBeGreaterThan(0);
     for (const el of elements) {
-      const isFocusableOrAccessible = el.props.focusable === true || el.props.accessible === true;
-      expect(isFocusableOrAccessible).toBe(true);
-
       const label = el.props.accessibilityLabel;
+      const deliberatelyInert = el.props.accessibilityState?.disabled === true;
+
+      if (!deliberatelyInert) {
+        // Reachability is the claim this file makes; assert it on its own.
+        expect(el.props.focusable).toBe(true);
+      }
+      // Screen-reader exposure is a separate claim; assert it on its own.
+      expect(el.props.accessible).toBe(true);
+
       expect(typeof label).toBe('string');
       expect(label.trim().length).toBeGreaterThan(0);
     }

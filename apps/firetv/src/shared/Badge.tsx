@@ -15,7 +15,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'default' }) => {
       case 'verified':
         return {
           container: { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: colors.verified },
-          text: { color: colors.verified }
+          text: { color: colors.verifiedText }
         };
       case 'ai-draft':
         return {
@@ -25,17 +25,17 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'default' }) => {
       case 'pre-generated':
         return {
           container: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderColor: colors.narration },
-          text: { color: colors.narration }
+          text: { color: colors.narrationText }
         };
       case 'dialogue':
         return {
           container: { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: colors.dialogue },
-          text: { color: colors.dialogue }
+          text: { color: colors.verifiedText }
         };
       case 'skipped':
         return {
           container: { backgroundColor: 'rgba(100, 116, 139, 0.15)', borderColor: colors.skipped },
-          text: { color: colors.skipped }
+          text: { color: colors.skippedText }
         };
       default:
         return {
