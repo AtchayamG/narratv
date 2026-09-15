@@ -123,6 +123,7 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
             // nothing walks upward into the cards. A control a television
             // remote cannot reach does not exist on a television.
             hasTVPreferredFocus
+            accessibilityState={{ checked: !config.demoMode }}
             accessibilityLabel={
               config.demoMode
                 ? 'Switch to live mode. The app will call the deployed AWS pipeline for descriptions.'
@@ -232,6 +233,7 @@ export const SystemStatusScreen: React.FC<SystemStatusScreenProps> = ({ navigati
           variant="primary"
           onPress={fetchHealth}
           disabled={loading}
+          accessibilityState={{ disabled: loading, busy: loading }}
           // hasTVPreferredFocus moved to the mode toggle in the first card -
           // see the note there. Two controls claiming preferred focus is
           // undefined behaviour, and this one being at the bottom of the page

@@ -14,10 +14,12 @@ import { container } from '../../../core/di';
 import { config } from '../../../core/config';
 import { announceForAccessibility } from '../../../core/accessibility';
 import { getTitleArtwork } from '../../../shared/artAssets';
+import { ITtsAdapter } from '../data/tts-adapter';
 
 export interface PlayerScreenProps {
   route: { params: { titleId: string } };
   navigation: any;
+  ttsAdapter?: ITtsAdapter;
 }
 
 /** Idle time before the chrome fades away and the picture is left clean. */
@@ -25,7 +27,7 @@ const CHROME_IDLE_MS = 4000;
 /** Film bed level while narration is audible, so the voice sits on top. */
 const DUCKED_VOLUME = 0.25;
 
-export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation }) => {
+export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, ttsAdapter }) => {
   const { titleId } = route.params;
 
   const [title, setTitle] = useState<Title | null>(null);
@@ -190,7 +192,8 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
     subtitles,
     currentTimeSec,
     isPlaying: isPlaying && isVideoReady,
-    adEnabled
+    adEnabled,
+    tts: ttsAdapter
   });
 
   const hasTrackDescriptions = Boolean(track && track.descriptions && track.descriptions.length > 0);
@@ -374,6 +377,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
               style={styles.refusalPill}
               accessible={true}
               accessibilityRole="text"
+              accessibilityLiveRegion="assertive"
               accessibilityLabel={
                 refusal.reason === 'no-gap'
                   ? 'Description skipped: no dialogue-free gap long enough.'
@@ -391,6 +395,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
               style={styles.narrationStrip}
               accessible={true}
               accessibilityRole="text"
+              accessibilityLiveRegion="polite"
               accessibilityLabel={`Audio description: ${currentDescription.text}`}
             >
               <View style={styles.narrationAccent} />
@@ -429,6 +434,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             onPress={guarded(handleTogglePlay)}
             onFocus={revealChrome}
             hasTVPreferredFocus={true}
+            accessibilityState={{ selected: isPlaying }}
             accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}
           />
           <Button
@@ -437,6 +443,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             style={styles.playerButton}
             onPress={guarded(handleToggleAd)}
             onFocus={revealChrome}
+            accessibilityState={{ checked: hasTrackDescriptions && adEnabled, disabled: !hasTrackDescriptions }}
             accessibilityLabel={hasTrackDescriptions ? (adEnabled ? 'Audio description is on. Press to mute.' : 'Audio description is off. Press to enable.') : 'Audio description is not available for this title.'}
           />
           <Button
@@ -446,6 +453,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             onPress={guarded(handleDescribeNow)}
             onFocus={revealChrome}
             disabled={isDescribingLive}
+            accessibilityState={{ disabled: isDescribingLive, busy: isDescribingLive }}
             accessibilityLabel="Describe Now. Triggers on-demand multimodal Bedrock description of the current frame."
           />
           <Button
@@ -454,6 +462,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation })
             style={styles.playerButton}
             onPress={guarded(handleToggleTimeline)}
             onFocus={revealChrome}
+            accessibilityState={{ expanded: showTimeline }}
             accessibilityLabel="Toggle Timeline surface to view dialogue gaps and scheduled narration blocks"
           />
           <Button

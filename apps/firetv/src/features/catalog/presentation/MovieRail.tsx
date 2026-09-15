@@ -18,6 +18,7 @@ export interface MovieRailProps {
 export const MovieRail: React.FC<MovieRailProps> = ({
   title,
   items,
+  selectedTitleId,
   hasTVPreferredFocus = false,
   onSelectTitle,
   onFocusTitle
@@ -35,6 +36,7 @@ export const MovieRail: React.FC<MovieRailProps> = ({
             key={item.id}
             style={styles.card}
             hasTVPreferredFocus={Boolean(hasTVPreferredFocus && index === 0)}
+            accessibilityState={{ selected: selectedTitleId === item.id }}
             onPress={() => onSelectTitle(item)}
             onFocus={() => onFocusTitle(item)}
             accessibilityLabel={
