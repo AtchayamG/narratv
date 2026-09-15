@@ -4,12 +4,14 @@ import { Description, SubtitleCue } from '@narratv/contracts';
 import { colors, typography, spacing, radii } from '../../../core/theme';
 import { FocusableCard } from '../../../shared/FocusableCard';
 import { Badge } from '../../../shared/Badge';
+import { announceForAccessibility } from '../../../core/accessibility';
 
 export interface TimelineSurfaceProps {
   descriptions: Description[];
   subtitles: SubtitleCue[];
   currentTimeSec: number;
   durationSec: number;
+  hasTVPreferredFocus?: boolean;
   onSelectDescription?: (desc: Description) => void;
 }
 
@@ -18,6 +20,7 @@ export const TimelineSurface: React.FC<TimelineSurfaceProps> = ({
   subtitles,
   currentTimeSec,
   durationSec,
+  hasTVPreferredFocus = false,
   onSelectDescription
 }) => {
   const formatTime = (sec: number) => {
@@ -86,6 +89,8 @@ export const TimelineSurface: React.FC<TimelineSurfaceProps> = ({
                   styles.dialogueCard,
                   isActive && styles.activeCard
                 ]}
+                hasTVPreferredFocus={Boolean(hasTVPreferredFocus && idx === 0)}
+                onPress={() => announceForAccessibility(`Dialogue from ${formatTime(cue.tStart)} to ${formatTime(cue.tEnd)}: ${cue.text}`)}
                 accessibilityLabel={`Dialogue from ${formatTime(cue.tStart)} to ${formatTime(cue.tEnd)}: ${cue.text}`}
                 accessibilityHint="Spoken speech detected by subtitles"
               >
@@ -110,7 +115,7 @@ export const TimelineSurface: React.FC<TimelineSurfaceProps> = ({
                 isSkipped ? styles.skippedCard : styles.narrationCard,
                 isActive && styles.activeCard
               ]}
-              hasTVPreferredFocus={idx === 0}
+              hasTVPreferredFocus={Boolean(hasTVPreferredFocus && idx === 0)}
               onPress={() => onSelectDescription?.(desc)}
               accessibilityLabel={`${isSkipped ? 'Skipped description' : 'Narration'} at ${formatTime(desc.tStart)}: ${desc.text}. ${desc.placementRule || ''}`}
               accessibilityHint="Press Select to view decision and source frame details in WhyPanel"

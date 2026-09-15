@@ -10,6 +10,7 @@ export interface MovieRailProps {
   title: string;
   items: Title[];
   selectedTitleId?: string;
+  hasTVPreferredFocus?: boolean;
   onSelectTitle: (title: Title) => void;
   onFocusTitle: (title: Title) => void;
 }
@@ -17,6 +18,7 @@ export interface MovieRailProps {
 export const MovieRail: React.FC<MovieRailProps> = ({
   title,
   items,
+  hasTVPreferredFocus = false,
   onSelectTitle,
   onFocusTitle
 }) => {
@@ -28,10 +30,11 @@ export const MovieRail: React.FC<MovieRailProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <FocusableCard
             key={item.id}
             style={styles.card}
+            hasTVPreferredFocus={Boolean(hasTVPreferredFocus && index === 0)}
             onPress={() => onSelectTitle(item)}
             onFocus={() => onFocusTitle(item)}
             accessibilityLabel={

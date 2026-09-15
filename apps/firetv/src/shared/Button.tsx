@@ -18,9 +18,21 @@ export interface ButtonProps {
   variant?: ButtonVariant;
   style?: StyleProp<ViewStyle>;
   hasTVPreferredFocus?: boolean;
+  focusable?: boolean;
+  nextFocusUp?: number;
+  nextFocusDown?: number;
+  nextFocusLeft?: number;
+  nextFocusRight?: number;
   disabled?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityState?: {
+    disabled?: boolean;
+    selected?: boolean;
+    checked?: boolean | 'mixed';
+    busy?: boolean;
+    expanded?: boolean;
+  };
   icon?: React.ReactNode;
 }
 
@@ -31,9 +43,15 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   style,
   hasTVPreferredFocus,
+  focusable,
+  nextFocusUp,
+  nextFocusDown,
+  nextFocusLeft,
+  nextFocusRight,
   disabled = false,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityState,
   icon
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -79,12 +97,17 @@ export const Button: React.FC<ButtonProps> = ({
       }}
       onBlur={() => setIsFocused(false)}
       hasTVPreferredFocus={hasTVPreferredFocus}
+      focusable={focusable ?? !disabled}
+      nextFocusUp={nextFocusUp}
+      nextFocusDown={nextFocusDown}
+      nextFocusLeft={nextFocusLeft}
+      nextFocusRight={nextFocusRight}
       disabled={disabled}
       accessible={true}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled, selected: isFocused }}
+      accessibilityState={{ disabled, selected: isFocused, ...accessibilityState }}
       style={[
         styles.base,
         vStyles.base,

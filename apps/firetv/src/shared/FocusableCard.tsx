@@ -17,9 +17,21 @@ export interface FocusableCardProps {
   style?: StyleProp<ViewStyle>;
   focusedStyle?: StyleProp<ViewStyle>;
   hasTVPreferredFocus?: boolean;
+  focusable?: boolean;
+  nextFocusUp?: number;
+  nextFocusDown?: number;
+  nextFocusLeft?: number;
+  nextFocusRight?: number;
   accessibilityLabel: string;
   accessibilityHint?: string;
   accessibilityRole?: AccessibilityRole;
+  accessibilityState?: {
+    disabled?: boolean;
+    selected?: boolean;
+    checked?: boolean | 'mixed';
+    busy?: boolean;
+    expanded?: boolean;
+  };
 }
 
 export const FocusableCard: React.FC<FocusableCardProps> = ({
@@ -30,9 +42,15 @@ export const FocusableCard: React.FC<FocusableCardProps> = ({
   style,
   focusedStyle,
   hasTVPreferredFocus,
+  focusable,
+  nextFocusUp,
+  nextFocusDown,
+  nextFocusLeft,
+  nextFocusRight,
   accessibilityLabel,
   accessibilityHint,
-  accessibilityRole = 'button'
+  accessibilityRole = 'button',
+  accessibilityState
 }) => {
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
@@ -48,11 +66,16 @@ export const FocusableCard: React.FC<FocusableCardProps> = ({
         onBlur?.();
       }}
       hasTVPreferredFocus={hasTVPreferredFocus}
+      focusable={focusable ?? true}
+      nextFocusUp={nextFocusUp}
+      nextFocusDown={nextFocusDown}
+      nextFocusLeft={nextFocusLeft}
+      nextFocusRight={nextFocusRight}
       accessible={true}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ selected: isFocused }}
+      accessibilityState={{ selected: isFocused, ...accessibilityState }}
       style={[
         styles.base,
         style,
