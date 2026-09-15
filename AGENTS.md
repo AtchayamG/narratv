@@ -35,7 +35,7 @@ You are a bounded implementation worker. Claude/Codex own architecture, integrat
 5. Domain layer has zero React/AWS imports. Respect `docs/03-architecture/architecture.md` dependency rule.
 6. Every task adds/updates focused tests and runs them. Record exact commands + results.
 7. Only CC-BY / CC0 media (Blender Foundation films). Record license + URL in `docs/06-demo-submission/media-licenses.md`.
-8. Log friction as you go in `docs/06-demo-submission/friction-logs.md` (task, steps, expected, actual, severity, workaround, suggestion) and tool feedback in `docs/06-demo-submission/product-feedback.md`. These are scored by judges.
+8. Log friction as you go in `docs/06-demo-submission/friction-log.md` (task, steps, expected, actual, severity, workaround, suggestion) and tool feedback in `docs/06-demo-submission/product-feedback.md`. These are scored by judges.
 9. Stop and report BLOCKED on architecture conflicts, missing requirements, or anything needing an account/credential/payment.
 
 ## Handoff (write to docs/04-agents/handoff-<task-id>.md, then paste in chat)
