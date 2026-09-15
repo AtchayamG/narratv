@@ -16,7 +16,7 @@
     "_comment_esbuild": "CDK's NodejsFunction bundles by shelling out to `yarn run esbuild` from the workspace ROOT. Yarn 4 does not expose a workspace dependency's binary as a root script, so without this line bundling dies with 'Couldn't find a script named esbuild' and every Lambda fails to synthesize. Do not remove it because nothing appears to call it - CDK does.",
     "esbuild": "esbuild",
     "build": "yarn workspaces foreach -pt run build",
-    "typecheck": "tsc --build",
+    "typecheck": "tsc --noEmit -p packages/contracts && tsc --noEmit -p packages/scheduler && tsc --noEmit -p services/pipeline && tsc --noEmit -p apps/firetv",
     "lint": "eslint . --ext .ts,.tsx",
     "pipeline:local": "yarn workspace @narratv/pipeline run local",
     "review": "yarn workspace @narratv/pipeline run review"
