@@ -1,5 +1,8 @@
 # NarraTV
 
+
+**▶ [Watch the 2:43 demo](https://youtu.be/Z9Vgvd5bRUs)** — the app running on an Android TV device, including the on-screen refusal and a live Amazon Bedrock Nova Pro description.
+
 **Audio description for the 93% of films that will never get a human one.**
 
 [![Tests](https://img.shields.io/badge/Tests-22%20suites%20%7C%2087%20passing-success)](./ops/test-all.cmd)
