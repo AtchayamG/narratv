@@ -1,4 +1,3 @@
-﻿import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { HeroSpotlight } from '../src/features/catalog/presentation/HeroSpotlight';
 import { MovieRail } from '../src/features/catalog/presentation/MovieRail';
@@ -16,7 +15,8 @@ describe('12.2 Accessibility Audit Regression Tests', () => {
     rating: 'PG',
     genre: 'Fantasy / Animation',
     year: 2010,
-    videoUrl: 'https://example.com/sintel.mp4'
+    videoUrl: 'https://example.com/sintel.mp4',
+    license: 'CC-BY 3.0 (Blender Foundation)'
   };
 
   const bbbTitle: Title = {
@@ -27,7 +27,8 @@ describe('12.2 Accessibility Audit Regression Tests', () => {
     rating: 'G',
     genre: 'Animation / Comedy',
     year: 2008,
-    videoUrl: 'https://example.com/bbb.mp4'
+    videoUrl: 'https://example.com/bbb.mp4',
+    license: 'CC-BY 3.0 (Blender Foundation)'
   };
 
   const sintelTrack: DescriptionTrack = {

@@ -1,11 +1,13 @@
 import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import {
   getNarrationVoice,
   initialLeadInFor,
   NARRATION_RATE,
   NARRATION_PITCH
 } from './voice-selection';
+
+type AudioSound = InstanceType<typeof Audio.Sound>;
 
 /**
  * Callbacks let the scheduler drive UI from the REAL speech lifecycle rather
@@ -56,7 +58,7 @@ export function estimateSpeechSec(text: string, wordsPerSec = SPEECH_WORDS_PER_S
 }
 
 export class TtsAdapter implements ITtsAdapter {
-  private currentSound: Audio.Sound | null = null;
+  private currentSound: AudioSound | null = null;
   private isSpeakingLocally = false;
   /** Incremented on every speak/stop so late callbacks from a cancelled
    *  utterance cannot resurrect narration state for a newer one. */
@@ -124,7 +126,7 @@ export class TtsAdapter implements ITtsAdapter {
         this.isSpeakingLocally = true;
 
         let started = false;
-        sound.setOnPlaybackStatusUpdate(status => {
+        sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
           if (!status.isLoaded || !fresh()) return;
           if (status.isPlaying && !started) {
             started = true;

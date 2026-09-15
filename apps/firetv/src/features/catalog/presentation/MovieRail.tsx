@@ -54,7 +54,7 @@ export const MovieRail: React.FC<MovieRailProps> = ({
                 <Text style={styles.itemMeta}>{item.year} · {item.rating}</Text>
                 <Badge
                   label={item.id === 'sintel' ? "AD Track" : "No AD Track"}
-                  variant={item.id === 'sintel' ? "pre-generated" : "warning"}
+                  variant={item.id === 'sintel' ? "pre-generated" : "skipped"}
                 />
               </View>
             </View>

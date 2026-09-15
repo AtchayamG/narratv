@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { FixtureTrackRepository } from '../src/features/catalog/data/fixture-track-repository';
 import { PlayerScreen } from '../src/features/player/presentation/PlayerScreen';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { SystemStatusScreen } from '../src/features/settings/presentation/SystemStatusScreen';
 import { config } from '../src/core/config';

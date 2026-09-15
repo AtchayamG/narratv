@@ -66,7 +66,7 @@ describe('the mode can be switched at runtime', () => {
   it('notifies subscribers, and stops after unsubscribe', () => {
     const { setDemoMode, onModeChange } = freshConfig();
     const seen: boolean[] = [];
-    const off = onModeChange(v => seen.push(v));
+    const off = onModeChange((v: boolean) => seen.push(v));
 
     setDemoMode(false);
     setDemoMode(true);
@@ -80,7 +80,7 @@ describe('the mode can be switched at runtime', () => {
   it('does not notify when the value is unchanged', () => {
     const { setDemoMode, onModeChange } = freshConfig();
     const seen: boolean[] = [];
-    onModeChange(v => seen.push(v));
+    onModeChange((v: boolean) => seen.push(v));
     setDemoMode(true); // already true
     expect(seen).toEqual([]);
   });

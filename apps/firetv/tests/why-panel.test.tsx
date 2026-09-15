@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { WhyPanel } from '../src/features/player/presentation/WhyPanel';
 import { Description } from '@narratv/contracts';

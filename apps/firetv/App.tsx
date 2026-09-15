@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { View, StyleSheet, BackHandler, StatusBar } from 'react-native';
 import { useFonts } from 'expo-font';
 import { CatalogScreen } from './src/features/catalog/presentation/CatalogScreen';
