@@ -125,7 +125,7 @@ Stated plainly, because a judge should not have to guess.
 | Real video streaming | **Verified** | `react-native-video` / ExoPlayer Media3, real `onProgress` timecodes |
 | Scheduler invariants (0 overlaps) | **Verified** | Pure TS engine + `fast-check` property tests |
 | Narration/dialogue collision refusal | **Verified** | Named runtime tests, on-screen refusal |
-| Sync error ≤ ~0.2s mean | **Verified** | App-logged telemetry, `ops-tools/synccheck-inner.cmd` |
+| Sync error ≤ ~0.2s mean | **Verified, narrow sample** | App-logged telemetry, `ops-tools/synccheck-inner.cmd`, re-derived from `ops-tools/sync.log` 2026-09-16: **mean absolute error 0.203s** over the **10** lines logged in the opening gap (mean signed −0.081s, median 0.200s, **max 0.540s** on `sintel-ad-02`, 6 of 10 within 0.2s). One run, 2026-09-03. The mean is real; it is 10 of 44 lines from a single pass, not the whole film |
 | Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
 | Bedrock + Polly adapter code | **Verified (mocked)** | `aws-sdk-client-mock`; asserts `amazon.nova-pro-v1:0`, `us-east-1`, fail-loud DEMO enforcement |
@@ -136,7 +136,7 @@ Stated plainly, because a judge should not have to guess.
 | Model accuracy, measured | **19 of 34 correct unaided** | Every Bedrock-written line was reviewed against its own frame. 19 observations were accepted as written; 15 were corrected. Counts are derived from the per-line labels by `ops-tools/apply-character-register.mjs`, never typed in — see below |
 | Character continuity | **Enforced** | One identity per character, held across all 44 lines. `apps/firetv/tests/character-continuity.test.ts` fails the build if the track calls one person two things |
 | Refusal visible **in context** | **Verified on device** | `SKIPPED · NO GAP` appears over the picture at 2:26.8, holds 4s, clears. Recorded and frame-checked. Until this fix it never appeared at all — see below |
-| Hand-written lines, re-audited | **4 of 10 were wrong** | The opening gap was written by hand and labelled verified, then never re-checked. Re-extracting its frames found four lines describing a scene the film does not contain. All rewritten; see `sintel-track.json.PROVENANCE.md` |
+| Hand-written lines, re-audited | **4 of 10 were wrong** | The opening gap was written by hand and labelled verified, then never re-checked. Re-extracting its frames found four lines describing a scene the film does not contain. Five lines were rewritten in total — the fifth, `ad-05`, was close but led on the wrong detail. Re-derived from the per-line labels 2026-09-16; see `sintel-track.json.PROVENANCE.md` |
 
 ### How the track was written, and how good the model actually was
 
