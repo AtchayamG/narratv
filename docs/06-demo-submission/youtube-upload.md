@@ -1,9 +1,38 @@
 # YouTube upload — NarraTV demo video
 
-**File**: `docs/assets/narratv-demo-v5.mp4` (34.6 MB, 2:42.5, 1920x1080 @ 60fps,
-AAC 48 kHz stereo, mean -22.8 dB / peak -4.4 dB, no silence gap over 4s)
+**File**: `docs/assets/narratv-demo-v5.mp4` (33.0 MB / 34,582,315 bytes,
+162.556s = 2:42.5, 1920x1080 @ 60fps, AAC 48 kHz stereo)
 
-The 3:00 limit in the rules is hard. This cut is 17.5s under it.
+**Thumbnail**: `docs/assets/thumbnail-youtube.png` (484 KB)
+
+**Audio, re-mastered 2026-09-16**: integrated **-16.0 LUFS**, true peak
+**-1.3 dBTP**. The earlier master was -19.9 LUFS / -4.4 dBTP, which is 6.4 LU
+quieter than project 4 and about 6 LU under YouTube's normalisation target -
+and YouTube attenuates loud content but never boosts quiet content, so that gap
+reached the viewer as faint narration on the project whose whole subject is
+audible narration. Three causes, all measured and all fixed:
+
+1. The edge-tts narration mp3s are MONO, and the chain widened them with
+   `aformat=channel_layouts=stereo`, which applies a -3 dB per-channel power
+   normalisation. Measured on vo-04a: -22.9 dB mean via aformat vs -19.9 dB via
+   `pan=stereo|c0=c0|c1=c0`. The voiceover was arriving 3.0 dB under its own
+   level before it ever met the film.
+2. The film bed was a static `volume=0.32` - 10 dB down even where nobody
+   narrates, and still losing to a loud cue where someone does. It is now ducked
+   dynamically with `sidechaincompress` keyed on the narration.
+3. No final loudnorm. Now `loudnorm=I=-16:TP=-1.5:LRA=11` at the caption burn.
+
+The evidence recordings are **never muted** - the duck is a dip, not a gate,
+because the device-recording audio is part of what they prove. Verified by
+rendering the film bed alone with and without the sidechain (`ops-tools/video/
+orch-duck-probe.cmd`): -9.9 dB at t=1s, -7.2 at 5s, -9.3 at 10s, -4.6 at 15s,
+-9.7 at 22s, -7.2 at 26s, and **0.0 dB / -0.1 dB at t=19.9s / 20.1s**, the
+0.6-second gap between the two narration lines - full level returns the instant
+the voice stops. Across the segment the bed went -25.6 to -30.2 dB mean, only
+4.6 dB of average reduction against the old flat 10 dB, so the recordings are
+audibly *louder* than before while getting out of the way when it matters.
+
+The 3:00 limit in the rules is hard. This cut is 17.4s under it.
 
 ## Visibility
 
@@ -82,9 +111,30 @@ React Native, blind, low vision, assistive technology, hackathon
 - **Comments**: leave on
 - **Playlist / Shorts**: none
 
-## After upload
+## After upload — FOUR places, not three
 
-Paste the watch URL back and it goes into three places:
-1. The Devpost submission's video field
-2. The P1 README, as a "Watch the demo" line under the badges
-3. `docs/06-demo-submission/evidence.md`
+Re-uploading mints a NEW video id. The old one is `Z9Vgvd5bRUs`. Paste the new
+watch URL back and it goes into **four** places:
+
+1. **The Devpost SUBMISSION record** — `/submit-to/30992-build-ship-shape-amazon-
+   developer-hackathon/manage/submissions/1183969-narratv/project_details/edit`
+2. **The Devpost PROJECT record** — `/software/narratv/edit`
+3. The P1 README, the "Watch the 2:43 demo" line under the badges
+4. `docs/06-demo-submission/evidence.md`
+
+**(1) and (2) are separate records and do not sync.** Devpost support put it
+plainly: "Once you submit, two separate items exist: your project and your
+submission. If you visit your projects page, you may still see the old video URL
+there." Updating only the submission is what left project 4's public page
+playing the superseded cut for days while every save looked successful — four
+saves across three different URL forms, all of which persisted in the field and
+none of which moved the embed, because they were all hitting the wrong record.
+The project record is the one the public gallery page renders.
+
+Verify by loading the public page and reading the iframe src, not by re-reading
+the edit field. A saved field is not a refreshed embed.
+
+Then **unlist** the old video rather than deleting it — only after the public
+page is confirmed showing the new id. Deleting is irreversible and buys nothing
+over unlisting; unlisting keeps any already-shared link alive instead of
+returning a dead frame.
