@@ -111,16 +111,30 @@ React Native, blind, low vision, assistive technology, hackathon
 - **Comments**: leave on
 - **Playlist / Shorts**: none
 
-## After upload — FOUR places, not three
+## After upload — THREE places
 
 Re-uploading mints a NEW video id. The old one is `Z9Vgvd5bRUs`. Paste the new
-watch URL back and it goes into **four** places:
+watch URL back and it goes into **three** places:
 
 1. **The Devpost SUBMISSION record** — `/submit-to/30992-build-ship-shape-amazon-
    developer-hackathon/manage/submissions/1183969-narratv/project_details/edit`
 2. **The Devpost PROJECT record** — `/software/narratv/edit`
-3. The P1 README, the "Watch the 2:43 demo" line under the badges
-4. `docs/06-demo-submission/evidence.md`
+3. The P1 README, line 4, the "Watch the 2:43 demo" line under the badges
+
+An earlier revision of this section said **four** places and listed
+`docs/06-demo-submission/evidence.md` as the fourth. That was wrong.
+`evidence.md` carries no video URL — it indexes the b-roll capture masters and
+only refers to "the published ≤3-minute demo video" in prose, without a link.
+A repo-wide search for `Z9Vgvd5bRUs` returns exactly two files: `README.md`
+line 4, and this file (below, where the old id is kept deliberately as
+history). Verify with:
+
+```
+findstr /S /N /C:"Z9Vgvd5bRUs" *.md docs\*.md docs\06-demo-submission\*.md
+```
+
+Files to **commit** after an upload: `README.md` and this file. Nothing else —
+the `.mp4` is gitignored on purpose so the repo stays clonable.
 
 **(1) and (2) are separate records and do not sync.** Devpost support put it
 plainly: "Once you submit, two separate items exist: your project and your
