@@ -113,6 +113,8 @@ React Native, blind, low vision, assistive technology, hackathon
 
 ## After upload — THREE places
 
+Uploaded 2026-09-21: https://youtu.be/slyluQxHFXA
+
 Re-uploading mints a NEW video id. The old one is `Z9Vgvd5bRUs`. Paste the new
 watch URL back and it goes into **three** places:
 
