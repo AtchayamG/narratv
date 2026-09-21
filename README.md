@@ -335,10 +335,23 @@ evidence here that review is not optional.
 ## Running it
 
 ```powershell
-ops\test-all.cmd          # 24 suites / 117 tests across 4 workspaces
+ops\test-all.cmd          # 28 suites / 141 tests across 4 workspaces
 ops\build-release.cmd     # signed release APK for Fire OS / Android TV
 ops\test.cmd              # app suites only
+npm run typecheck         # tsc --noEmit over all 4 workspaces
 ```
+
+The typecheck matters and is not decoration. Jest runs through babel, which
+strips TypeScript types without checking them, so this suite stayed green for
+weeks while `tsc --noEmit` failed with seven errors — two of them real defects
+on the catalog screen and the audio-description playback path. There is now a
+test that runs the root typecheck and fails the suite if it regresses
+(`services/pipeline/tests/typecheck.test.ts`), which is why the count above
+includes it.
+
+A step-by-step guide for running and verifying this project, written for
+someone who has never seen the repo, is in
+[`docs/06-demo-submission/walkthrough.md`](./docs/06-demo-submission/walkthrough.md).
 
 `NODE_ENV` is pinned to `test` inside those scripts on purpose — see the comment
 in [`ops/test.cmd`](./ops/test.cmd).
