@@ -82,6 +82,12 @@ on screen.
   measures the room to the next cue *from the moment the voice will actually be
   audible* and refuses outright unless the line fits with 0.4s to spare. The
   refusal is displayed as `SKIPPED · NO GAP`, never silently swallowed.
+* **Or, if the viewer asks, it pauses instead of dropping the line.** Extended
+  descriptions (off by default; WCAG 2.2 SC 1.2.7) deliver a line that would be
+  refused by pausing the film on the exact frame it was written for, speaking it,
+  and resuming. It never pauses mid-line, never bypasses a quality gate, and still
+  refuses out loud when no safe point exists within 5 s of that frame. On *Sintel*
+  it delivers both lines the default mode refuses.
 * **It will not pretend to have described a film it hasn't.** Titles with no
   track play normally under an honest `NO AD TRACK` state. The HUD reads
   **AD 10/12** — described gaps over real gaps — not a fabricated 100%.
@@ -125,6 +131,7 @@ Stated plainly, because a judge should not have to guess.
 | Real video streaming | **Verified** | `react-native-video` / ExoPlayer Media3, real `onProgress` timecodes |
 | Scheduler invariants (0 overlaps) | **Verified** | Pure TS engine + `fast-check` property tests |
 | Narration/dialogue collision refusal | **Verified** | Named runtime tests, on-screen refusal |
+| Extended descriptions (WCAG 2.2 SC 1.2.7) | **Verified on the emulator, 2026-09-23** | Off by default. On: the two *Sintel* lines the default mode refuses are delivered by pausing on their own frames, 146.8 s and 449.3 s, zero seconds late. Device run, release APK: logcat `extended pause triggered at 146.65s for sintel-ad-11` → `video paused` → `TTS finished` 5.86 s later → `video resumed` 15 ms after that; [screenshot](docs/assets/screenshots/02e-extended-pause-at-2m26.png) taken mid-pause. Only sintel-ad-11 was watched on the device; sintel-ad-28 is covered by the tests, not yet observed |
 | Sync error ≤ ~0.2s mean | **Verified, narrow sample** | App-logged telemetry, `ops-tools/synccheck-inner.cmd`, re-derived from `ops-tools/sync.log` 2026-09-16: **mean absolute error 0.203s** over the **10** lines logged in the opening gap (mean signed −0.081s, median 0.200s, **max 0.540s** on `sintel-ad-02`, 6 of 10 within 0.2s). One run, 2026-09-03. The mean is real; it is 10 of 44 lines from a single pass, not the whole film |
 | Honest empty state | **Verified** | *Big Buck Bunny*, *Elephants Dream* play with `NO AD TRACK` |
 | Subtitle + description provenance | **Verified** | See the two `PROVENANCE.md` files under `apps/firetv/assets/fixtures/` |
