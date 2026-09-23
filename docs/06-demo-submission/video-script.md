@@ -160,7 +160,7 @@ mode throws before it can pretend otherwise."
 
 **Visual (2:35–2:48)** — System Status screen: provider health, CC-BY
 attribution for the Blender Foundation films and the Wikimedia subtitle track,
-and the test badge (**22 suites / 87 tests**).
+and the test badge (**28 suites / 141 tests** in the published cut; this script was first written at 22 / 87).
 
 **VO** — "Open source under MIT, built on Creative Commons cinema, with the
 attribution in the app itself."

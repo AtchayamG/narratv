@@ -69,15 +69,19 @@ This document provides exact file paths, line references, test commands, and arc
 
 ## 6. Test Suite Summary Table
 
-Run with `ops\test-all.cmd` (which pins `NODE_ENV=test` — see friction-log entry 8). Last full run 2026-09-04:
+Run with `ops\test-all.cmd` (which pins `NODE_ENV=test` — see friction-log entry 8). Last full run **2026-09-23**:
 
-| Workspace | Suites | Passed | Failed | Coverage highlights |
-|---|---|---|---|---|
-| `@narratv/contracts` | 1 | 6 | 0 | Schema validation |
-| `@narratv/scheduler` | 5 | — | 0 | Gap finding, placement, counters, `fast-check` property tests |
-| `@narratv/firetv` | 12 | — | 0 | Real RN primitives (no blanket mocks); scheduler hook, voice selection, no-track titles, a11y audit |
-| `@narratv/pipeline` | 4 | — | 0 | Lambdas, Step Functions, CDK synth, live Bedrock/Polly adapter |
-| **TOTAL** | **22 suites** | **87 tests** | **0** | all green |
+| Workspace | Suites | Failed | Coverage highlights |
+|---|---|---|---|
+| `@narratv/contracts` | 1 | 0 | Schema validation |
+| `@narratv/scheduler` | 5 | 0 | Gap finding, placement, counters, SRT parsing, `fast-check` property tests |
+| `@narratv/firetv` | 17 | 0 | Real RN primitives (no blanket mocks); scheduler hook, voice selection, no-track titles, a11y audit, D-pad focus, badge contrast read off the rendered node |
+| `@narratv/pipeline` | 5 | 0 | Lambdas, Step Functions, CDK synth, live Bedrock/Polly adapter, typecheck |
+| **TOTAL** | **28 suites** | **0** | **141 tests**, all green |
+
+The first full run, on 2026-09-04, was 22 suites / 87 tests. The difference is
+tests added since, not tests re-counted: contrast, D-pad focus, screen-reader
+state and the typecheck suite among them.
 
 ---
 
