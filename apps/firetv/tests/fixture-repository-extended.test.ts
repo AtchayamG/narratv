@@ -69,19 +69,6 @@ describe('FixtureTrackRepository — Primary Path Extended Mode (Correction 7)',
   });
 
   test('Synthetic fixture: a cue longer than 5.0 s covering a description stays refused even with extended: true', async () => {
-    // Test the preplaced logic with a synthetic subclass
-    class TestRepo extends FixtureTrackRepository {
-      async getSubtitles(titleId: string): Promise<SubtitleCue[]> {
-        if (titleId === 'synthetic-long-cue') {
-          return [
-            // Dialogue cue is 6.0 seconds long (exceeds 5.0s limit)
-            { id: 1, tStart: 100.0, tEnd: 106.0, text: 'A very long speech that cannot be safely paused.' }
-          ];
-        }
-        return super.getSubtitles(titleId);
-      }
-    }
-
     // Direct check of cue-chain length logic in safe pause placement
     const longCue: SubtitleCue = { id: 1, tStart: 100.0, tEnd: 106.0, text: 'Long dialogue' };
     const descOverlapping: Description = {

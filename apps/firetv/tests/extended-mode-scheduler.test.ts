@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { Description, SubtitleCue } from '@narratv/contracts';
-import { useScheduler } from '../src/features/player/domain/use-scheduler';
+import { useScheduler, UseSchedulerReturn } from '../src/features/player/domain/use-scheduler';
 import { ITtsAdapter, SpeakCallbacks } from '../src/features/player/data/tts-adapter';
 
 class FakeTts implements ITtsAdapter {
@@ -28,9 +28,9 @@ class FakeTts implements ITtsAdapter {
     this.speaking = false;
     this.cb.onDone?.();
   }
-  error(err: any = new Error('TTS synthesis failed')) {
+  error() {
     this.speaking = false;
-    this.cb.onError?.(err);
+    this.cb.onError?.();
   }
 }
 
@@ -91,6 +91,31 @@ const longNineSecDesc: Description = {
   pausePoint: 25.3
 };
 
+interface SetupOptions {
+  extendedEnabled?: boolean;
+  onPausePlayback?: () => void;
+  onResumePlayback?: () => void;
+  tts?: ITtsAdapter;
+}
+
+function setup(descriptions: Description[], options: SetupOptions = {}) {
+  return renderHook<UseSchedulerReturn, { t: number }>(
+    ({ t }: { t: number }) =>
+      useScheduler({
+        descriptions,
+        subtitles,
+        currentTimeSec: t,
+        isPlaying: true,
+        adEnabled: true,
+        extendedEnabled: options.extendedEnabled,
+        onPausePlayback: options.onPausePlayback,
+        onResumePlayback: options.onResumePlayback,
+        tts: options.tts
+      }),
+    { initialProps: { t: 0 } }
+  );
+}
+
 describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -104,22 +129,13 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
     const tts = new FakeTts();
     let pauseCalls = 0;
 
-    const { result, rerender } = renderHook(
-      ({ t }) =>
-        useScheduler({
-          descriptions: [tightDesc],
-          subtitles,
-          currentTimeSec: t,
-          isPlaying: true,
-          adEnabled: true,
-          extendedEnabled: false,
-          onPausePlayback: () => {
-            pauseCalls++;
-          },
-          tts
-        }),
-      { initialProps: { t: 0 } }
-    );
+    const { result, rerender } = setup([tightDesc], {
+      extendedEnabled: false,
+      onPausePlayback: () => {
+        pauseCalls++;
+      },
+      tts
+    });
 
     // Hit the slot for tightDesc (tStart: 8.0, cue at 10.0, needed 4.0s > 2.0s room)
     act(() => rerender({ t: 8.1 }));
@@ -140,22 +156,13 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
     const tts = new FakeTts();
     let pauseCalls = 0;
 
-    const { result, rerender } = renderHook(
-      ({ t }) =>
-        useScheduler({
-          descriptions: [normalDesc],
-          subtitles,
-          currentTimeSec: t,
-          isPlaying: true,
-          adEnabled: true,
-          extendedEnabled: true,
-          onPausePlayback: () => {
-            pauseCalls++;
-          },
-          tts
-        }),
-      { initialProps: { t: 0 } }
-    );
+    const { result, rerender } = setup([normalDesc], {
+      extendedEnabled: true,
+      onPausePlayback: () => {
+        pauseCalls++;
+      },
+      tts
+    });
 
     // Normal desc fits in [2.0, 6.0], cue is at 10.0
     act(() => rerender({ t: 2.1 }));
@@ -174,25 +181,16 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
     let pauseCalls = 0;
     let resumeCalls = 0;
 
-    const { result, rerender } = renderHook(
-      ({ t }) =>
-        useScheduler({
-          descriptions: [extendedDesc],
-          subtitles,
-          currentTimeSec: t,
-          isPlaying: true,
-          adEnabled: true,
-          extendedEnabled: true,
-          onPausePlayback: () => {
-            pauseCalls++;
-          },
-          onResumePlayback: () => {
-            resumeCalls++;
-          },
-          tts
-        }),
-      { initialProps: { t: 10.0 } }
-    );
+    const { result, rerender } = setup([extendedDesc], {
+      extendedEnabled: true,
+      onPausePlayback: () => {
+        pauseCalls++;
+      },
+      onResumePlayback: () => {
+        resumeCalls++;
+      },
+      tts
+    });
 
     // Playhead reaches pausePoint: 13.3
     act(() => rerender({ t: 13.3 }));
@@ -228,28 +226,19 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
       const tts = new FakeTts();
       let resumeCalls = 0;
 
-      const { result, rerender } = renderHook(
-        ({ t }) =>
-          useScheduler({
-            descriptions: [extendedDesc],
-            subtitles,
-            currentTimeSec: t,
-            isPlaying: true,
-            adEnabled: true,
-            extendedEnabled: true,
-            onResumePlayback: () => {
-              resumeCalls++;
-            },
-            tts
-          }),
-        { initialProps: { t: 10.0 } }
-      );
+      const { result, rerender } = setup([extendedDesc], {
+        extendedEnabled: true,
+        onResumePlayback: () => {
+          resumeCalls++;
+        },
+        tts
+      });
 
       act(() => rerender({ t: 13.3 }));
       expect(result.current.isExtendedPaused).toBe(true);
 
       // TTS errors
-      act(() => tts.error(new Error('Audio device failure')));
+      act(() => tts.error());
 
       // Film resumes
       expect(resumeCalls).toBe(1);
@@ -267,22 +256,13 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
 
       // longNineSecDesc has durationSec: 9.0s
       // Dynamic watchdog: (9.0 + 3.0) * 1000 = 12000ms
-      const { result, rerender } = renderHook(
-        ({ t }) =>
-          useScheduler({
-            descriptions: [longNineSecDesc],
-            subtitles,
-            currentTimeSec: t,
-            isPlaying: true,
-            adEnabled: true,
-            extendedEnabled: true,
-            onResumePlayback: () => {
-              resumeCalls++;
-            },
-            tts
-          }),
-        { initialProps: { t: 20.0 } }
-      );
+      const { result, rerender } = setup([longNineSecDesc], {
+        extendedEnabled: true,
+        onResumePlayback: () => {
+          resumeCalls++;
+        },
+        tts
+      });
 
       act(() => rerender({ t: 25.3 }));
       expect(result.current.isExtendedPaused).toBe(true);
@@ -310,22 +290,13 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
       const tts = new FakeTts();
       let resumeCalls = 0;
 
-      const { result, rerender } = renderHook(
-        ({ t }) =>
-          useScheduler({
-            descriptions: [extendedDesc],
-            subtitles,
-            currentTimeSec: t,
-            isPlaying: true,
-            adEnabled: true,
-            extendedEnabled: true,
-            onResumePlayback: () => {
-              resumeCalls++;
-            },
-            tts
-          }),
-        { initialProps: { t: 10.0 } }
-      );
+      const { result, rerender } = setup([extendedDesc], {
+        extendedEnabled: true,
+        onResumePlayback: () => {
+          resumeCalls++;
+        },
+        tts
+      });
 
       act(() => rerender({ t: 13.3 }));
       expect(result.current.isExtendedPaused).toBe(true);
@@ -348,19 +319,10 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
     test('5b: Viewer presses back / seek -> speech stops, extended pause clears, control returns to viewer', () => {
       const tts = new FakeTts();
 
-      const { result, rerender } = renderHook(
-        ({ t }) =>
-          useScheduler({
-            descriptions: [extendedDesc],
-            subtitles,
-            currentTimeSec: t,
-            isPlaying: true,
-            adEnabled: true,
-            extendedEnabled: true,
-            tts
-          }),
-        { initialProps: { t: 10.0 } }
-      );
+      const { result, rerender } = setup([extendedDesc], {
+        extendedEnabled: true,
+        tts
+      });
 
       act(() => rerender({ t: 13.3 }));
       expect(result.current.isExtendedPaused).toBe(true);

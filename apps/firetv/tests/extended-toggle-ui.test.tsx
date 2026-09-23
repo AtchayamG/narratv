@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react-native';
 import { PlayerScreen } from '../src/features/player/presentation/PlayerScreen';
 import { config } from '../src/core/config';
