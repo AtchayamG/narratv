@@ -54,6 +54,9 @@ export interface UseSchedulerProps {
   currentTimeSec: number;
   isPlaying: boolean;
   adEnabled: boolean;
+  extendedEnabled?: boolean;
+  onPausePlayback?: () => void;
+  onResumePlayback?: () => void;
   tts?: ITtsAdapter;
 }
 
@@ -66,6 +69,12 @@ export interface UseSchedulerReturn {
   refusal: { description: Description; reason: RefusalReason } | null;
   activeDescriptionCount: number;
   resetSpokenHistory: () => void;
+  /** True while video is paused to speak an extended description (WCAG 2.2 SC 1.2.7). */
+  isExtendedPaused: boolean;
+  /** The description currently being delivered during extended pause. */
+  extendedPauseDescription: Description | null;
+  /** Viewer interrupt: cancels extended pause, stops speech, resumes playback. */
+  interruptExtendedPause: () => void;
 }
 
 /** Seconds of dialogue-free room from `t` until the next cue begins. */
@@ -87,12 +96,18 @@ export function useScheduler({
   currentTimeSec,
   isPlaying,
   adEnabled,
+  extendedEnabled = false,
+  onPausePlayback,
+  onResumePlayback,
   tts = ttsAdapter
 }: UseSchedulerProps): UseSchedulerReturn {
   const [currentDescription, setCurrentDescription] = useState<Description | null>(null);
   const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleCue | null>(null);
   const [isNarrating, setIsNarrating] = useState<boolean>(false);
   const [refusal, setRefusal] = useState<{ description: Description; reason: RefusalReason } | null>(null);
+  const [isExtendedPaused, setIsExtendedPaused] = useState<boolean>(false);
+  const [extendedPauseDescription, setExtendedPauseDescription] = useState<Description | null>(null);
+
   /** Film time at which the current refusal notice went up. */
   const refusalSetAtRef = useRef<number | null>(null);
 
@@ -105,6 +120,9 @@ export function useScheduler({
   const nowRef = useRef<number>(currentTimeSec);
   nowRef.current = currentTimeSec;
 
+  const isExtendedPausedRef = useRef<boolean>(false);
+  const extendedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const silence = useCallback(() => {
     pendingRef.current = null;
     setIsNarrating(false);
@@ -112,12 +130,38 @@ export function useScheduler({
     tts.stop();
   }, [tts]);
 
+  const clearExtendedPause = useCallback(
+    (resumePlayback = true) => {
+      if (extendedTimeoutRef.current) {
+        clearTimeout(extendedTimeoutRef.current);
+        extendedTimeoutRef.current = null;
+      }
+      if (isExtendedPausedRef.current) {
+        isExtendedPausedRef.current = false;
+        setIsExtendedPaused(false);
+        setExtendedPauseDescription(null);
+        if (resumePlayback) {
+          onResumePlayback?.();
+        }
+      }
+    },
+    [onResumePlayback]
+  );
+
+  const interruptExtendedPause = useCallback(() => {
+    if (isExtendedPausedRef.current) {
+      silence();
+      clearExtendedPause(true);
+    }
+  }, [silence, clearExtendedPause]);
+
   const resetSpokenHistory = useCallback(() => {
     handledIdsRef.current.clear();
     refusalSetAtRef.current = null;
     setRefusal(null);
     silence();
-  }, [silence]);
+    clearExtendedPause(false);
+  }, [silence, clearExtendedPause]);
 
   // Resolve the voice and seed the lead-in before the first description is
   // due, so the opening narration is already close rather than calibrating on
@@ -126,27 +170,33 @@ export function useScheduler({
     tts.prime?.();
   }, [tts]);
 
-  // Seeking backwards re-arms everything after the new position.
+  // Seeking backwards or forwards re-arms everything after the new position and cancels extended pause.
   useEffect(() => {
-    if (currentTimeSec < lastTimeRef.current - 2.0) {
-      const kept = new Set<string>();
-      for (const desc of descriptions) {
-        if (desc.tStart < currentTimeSec && handledIdsRef.current.has(desc.id)) {
-          kept.add(desc.id);
-        }
+    if (Math.abs(currentTimeSec - lastTimeRef.current) > 2.0) {
+      if (isExtendedPausedRef.current) {
+        clearExtendedPause(false);
+        silence();
       }
-      handledIdsRef.current = kept;
-      refusalSetAtRef.current = null;
-      setRefusal(null);
-      silence();
+      if (currentTimeSec < lastTimeRef.current - 2.0) {
+        const kept = new Set<string>();
+        for (const desc of descriptions) {
+          if (desc.tStart < currentTimeSec && handledIdsRef.current.has(desc.id)) {
+            kept.add(desc.id);
+          }
+        }
+        handledIdsRef.current = kept;
+        refusalSetAtRef.current = null;
+        setRefusal(null);
+        silence();
+      }
     }
     lastTimeRef.current = currentTimeSec;
-  }, [currentTimeSec, descriptions, silence]);
+  }, [currentTimeSec, descriptions, silence, clearExtendedPause]);
 
   // Main loop. Driven purely by currentTimeSec from react-native-video
   // onProgress — never by a wall-clock timer.
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying && !isExtendedPausedRef.current) {
       if (pendingRef.current) silence();
       return;
     }
@@ -177,16 +227,23 @@ export function useScheduler({
         refusalSetAtRef.current = currentTimeSec;
         setRefusal({ description: pendingRef.current, reason: 'dialogue-active' });
         silence();
+        clearExtendedPause(true);
       }
       return;
     }
 
     if (!adEnabled) {
       if (pendingRef.current) silence();
+      clearExtendedPause(true);
       return;
     }
 
-    // 2. An utterance already in flight keeps the floor until its slot ends.
+    // 2. An extended pause in flight keeps the video paused until speech completes.
+    if (isExtendedPausedRef.current) {
+      return;
+    }
+
+    // An utterance already in flight keeps the floor until its slot ends.
     const pending = pendingRef.current;
     if (pending) {
       if (currentTimeSec >= pending.tEnd + TAIL_GUARD_SEC) {
@@ -202,15 +259,6 @@ export function useScheduler({
     // 2b. A description the LOADER already refused still owes the viewer an
     //     explanation, and it owes it in context, at the moment the line would
     //     have been spoken.
-    //
-    //     This branch exists because the refusal was invisible without it. For
-    //     a pre-placed track the repository decides collisions at load time and
-    //     stamps status 'skipped'; the candidate search below then filters those
-    //     out, so the runtime refusal at step 4 could never fire for them. The
-    //     counter pill said "2 SKIPPED" and the timeline card said
-    //     "SKIPPED: NO-GAP", but a viewer watching the film straight through
-    //     saw nothing at all at 2:26.8 - the one moment the refusal is the
-    //     honest answer. Silence is exactly what a refusal must not look like.
     const preRefused = descriptions.find(
       desc =>
         desc.status === 'skipped' &&
@@ -229,9 +277,82 @@ export function useScheduler({
       return;
     }
 
+    const triggerExtendedPause = (desc: Description) => {
+      handledIdsRef.current.add(desc.id);
+      isExtendedPausedRef.current = true;
+      setIsExtendedPaused(true);
+      setExtendedPauseDescription(desc);
+      onPausePlayback?.();
+
+      refusalSetAtRef.current = null;
+      setRefusal(null);
+      pendingRef.current = desc;
+
+      const duration = desc.durationSec ?? estimateSpeechSec(desc.text);
+      const watchdogMs = Math.round((duration + 3.0) * 1000);
+
+      if (extendedTimeoutRef.current) {
+        clearTimeout(extendedTimeoutRef.current);
+      }
+
+      extendedTimeoutRef.current = setTimeout(() => {
+        console.warn(`[narratv] Extended AD ${desc.id} timed out after ${watchdogMs}ms watchdog`);
+        setRefusal({ description: desc, reason: 'no-gap' });
+        silence();
+        clearExtendedPause(true);
+      }, watchdogMs);
+
+      tts
+        .speak(desc.text, desc.audioUrl, {
+          onStart: () => {
+            if (pendingRef.current?.id !== desc.id) return;
+            setCurrentDescription(desc);
+            setIsNarrating(true);
+          },
+          onDone: () => {
+            if (pendingRef.current?.id !== desc.id) return;
+            silence();
+            clearExtendedPause(true);
+          },
+          onError: (err?: any) => {
+            if (pendingRef.current?.id !== desc.id) return;
+            console.error(`[narratv] Extended AD ${desc.id} TTS error:`, err);
+            setRefusal({ description: desc, reason: 'no-gap' });
+            silence();
+            clearExtendedPause(true);
+          }
+        })
+        .catch((err) => {
+          if (pendingRef.current?.id === desc.id) {
+            console.error(`[narratv] Extended AD ${desc.id} TTS catch error:`, err);
+            setRefusal({ description: desc, reason: 'no-gap' });
+            silence();
+            clearExtendedPause(true);
+          }
+        });
+    };
+
+    // If extended mode is on, look for an extended description at its safe pausePoint
+    if (extendedEnabled) {
+      const extendedCandidate = descriptions.find(
+        desc =>
+          desc.status !== 'skipped' &&
+          desc.isExtended &&
+          !handledIdsRef.current.has(desc.id) &&
+          currentTimeSec >= (desc.pausePoint ?? desc.tStart) - 0.15 &&
+          currentTimeSec <= (desc.pausePoint ?? desc.tStart) + 0.8
+      );
+
+      if (extendedCandidate) {
+        triggerExtendedPause(extendedCandidate);
+        return;
+      }
+    }
+
     const candidate = descriptions.find(
       desc =>
         desc.status !== 'skipped' &&
+        !desc.isExtended &&
         !handledIdsRef.current.has(desc.id) &&
         currentTimeSec >= desc.tStart - leadIn &&
         currentTimeSec < desc.tEnd
@@ -249,6 +370,10 @@ export function useScheduler({
     const room = roomBeforeNextCue(currentTimeSec + leadIn, subtitles);
 
     if (needed + TAIL_GUARD_SEC > room) {
+      if (extendedEnabled) {
+        triggerExtendedPause(candidate);
+        return;
+      }
       // Refuse loudly rather than talk over the film.
       refusalSetAtRef.current = currentTimeSec;
       setRefusal({ description: candidate, reason: 'no-gap' });
@@ -297,7 +422,19 @@ export function useScheduler({
           setCurrentDescription(null);
         }
       });
-  }, [currentTimeSec, isPlaying, adEnabled, descriptions, subtitles, tts, silence, refusal]);
+  }, [
+    currentTimeSec,
+    isPlaying,
+    adEnabled,
+    extendedEnabled,
+    descriptions,
+    subtitles,
+    tts,
+    silence,
+    refusal,
+    clearExtendedPause,
+    onPausePlayback
+  ]);
 
   const activeDescriptionCount = descriptions.filter(d => d.status !== 'skipped').length;
 
@@ -307,6 +444,9 @@ export function useScheduler({
     isNarrating,
     refusal,
     activeDescriptionCount,
-    resetSpokenHistory
+    resetSpokenHistory,
+    isExtendedPaused,
+    extendedPauseDescription,
+    interruptExtendedPause
   };
 }
