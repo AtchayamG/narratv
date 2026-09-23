@@ -279,9 +279,10 @@ describe('D4 — 10-Foot D-Pad Reachability and Spatial Focus Invariants', () =>
 
       expect(labels[0]).toMatch(/Pause video|Play video/i);
       expect(labels[1]).toMatch(/Audio description is/i);
-      expect(labels[2]).toMatch(/Describe Now/i);
-      expect(labels[3]).toMatch(/Toggle Timeline/i);
-      expect(labels[4]).toMatch(/Back to movie catalog/i);
+      expect(labels[2]).toMatch(/Extended audio descriptions/i);
+      expect(labels[3]).toMatch(/Describe Now/i);
+      expect(labels[4]).toMatch(/Toggle Timeline/i);
+      expect(labels[5]).toMatch(/Back to movie catalog/i);
     });
   });
 });
