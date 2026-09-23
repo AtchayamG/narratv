@@ -53,8 +53,9 @@ export class HttpTrackRepository implements ITrackRepository {
     }
   }
 
-  async getTrack(titleId: string): Promise<DescriptionTrack> {
-    return this.request(`/titles/${titleId}/track`, DescriptionTrackSchema);
+  async getTrack(titleId: string, options?: { extended?: boolean }): Promise<DescriptionTrack> {
+    const query = options?.extended ? '?extended=true' : '';
+    return this.request(`/titles/${titleId}/track${query}`, DescriptionTrackSchema);
   }
 
   async getSubtitles(titleId: string): Promise<SubtitleCue[]> {
