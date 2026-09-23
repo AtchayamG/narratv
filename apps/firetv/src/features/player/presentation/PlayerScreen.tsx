@@ -146,6 +146,25 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
     };
   }, [titleId]);
 
+  useEffect(() => {
+    let isMounted = true;
+    container.trackRepository
+      .getTrack(titleId, { extended: extendedMode })
+      .then(fetchedTrack => {
+        if (isMounted) {
+          setTrack(fetchedTrack);
+        }
+      })
+      .catch((err: any) => {
+        if (isMounted) {
+          setToastMessage(err.message || 'Failed to update track mode');
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [titleId, extendedMode, container.trackRepository]);
+
   const handleBack = useCallback(() => {
     setIsPlaying(false);
     navigation.goBack();

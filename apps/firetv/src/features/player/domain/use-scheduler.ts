@@ -148,6 +148,7 @@ export function useScheduler({
         setIsExtendedPaused(false);
         setExtendedPauseDescription(null);
         if (resumePlayback) {
+          console.log('[narratv] video resumed');
           onResumePlayback?.();
         }
       }
@@ -291,10 +292,12 @@ export function useScheduler({
     }
 
     const triggerExtendedPause = (desc: Description) => {
+      console.log(`[narratv] extended pause triggered at ${currentTimeSec.toFixed(2)}s for ${desc.id}`);
       handledIdsRef.current.add(desc.id);
       isExtendedPausedRef.current = true;
       setIsExtendedPaused(true);
       setExtendedPauseDescription(desc);
+      console.log('[narratv] video paused');
       onPausePlayback?.();
 
       refusalSetAtRef.current = null;
@@ -324,6 +327,7 @@ export function useScheduler({
           },
           onDone: () => {
             if (pendingRef.current?.id !== desc.id) return;
+            console.log('[narratv] TTS finished');
             silence();
             clearExtendedPause(true);
           },
