@@ -168,6 +168,12 @@ export function useScheduler({
   // the viewer. Voice enumeration is slow enough to matter here.
   useEffect(() => {
     tts.prime?.();
+    return () => {
+      if (extendedTimeoutRef.current) {
+        clearTimeout(extendedTimeoutRef.current);
+        extendedTimeoutRef.current = null;
+      }
+    };
   }, [tts]);
 
   // Seeking backwards or forwards re-arms everything after the new position and cancels extended pause.

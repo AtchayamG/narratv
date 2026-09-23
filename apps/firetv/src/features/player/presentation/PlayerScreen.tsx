@@ -41,6 +41,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
   const [durationSec, setDurationSec] = useState<number>(0);
   const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
   const [adEnabled, setAdEnabled] = useState<boolean>(true);
+  const [extendedMode, setExtendedMode] = useState<boolean>(false);
 
   // UI state
   const [showTimeline, setShowTimeline] = useState<boolean>(false);
@@ -187,12 +188,22 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
   // scene the viewer's companion cannot yet see is the desync that made the
   // first demo look wrong, and a blind viewer would hear description over a
   // film that has not started.
-  const { currentDescription, currentSubtitle, isNarrating, refusal } = useScheduler({
+  const {
+    currentDescription,
+    currentSubtitle,
+    isNarrating,
+    refusal,
+    isExtendedPaused,
+    extendedPauseDescription: _extendedPauseDesc
+  } = useScheduler({
     descriptions: track?.descriptions || [],
     subtitles,
     currentTimeSec,
     isPlaying: isPlaying && isVideoReady,
     adEnabled,
+    extendedEnabled: extendedMode,
+    onPausePlayback: () => setIsPlaying(false),
+    onResumePlayback: () => setIsPlaying(true),
     tts: ttsAdapter
   });
 
@@ -213,6 +224,26 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
       return next;
     });
   }, [hasTrackDescriptions]);
+
+  const handleToggleExtended = useCallback(async () => {
+    if (!hasTrackDescriptions) {
+      setToastMessage('Audio description not yet generated for this title (see runbook).');
+      return;
+    }
+    const next = !extendedMode;
+    setExtendedMode(next);
+    announceForAccessibility(
+      next
+        ? 'Extended audio descriptions enabled. Playback will pause when needed to speak full descriptions.'
+        : 'Extended audio descriptions disabled.'
+    );
+    try {
+      const updatedTrack = await container.trackRepository.getTrack(titleId, { extended: next });
+      setTrack(updatedTrack);
+    } catch (err: any) {
+      console.warn('Failed to update track for extended mode:', err);
+    }
+  }, [hasTrackDescriptions, extendedMode, titleId]);
 
   const handleToggleTimeline = useCallback(() => {
     setShowTimeline(prev => !prev);
@@ -339,7 +370,9 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
                   a skipped description is the behaviour worth advertising,
                   not something to hide behind a subtraction. */}
               {hasTrackDescriptions
-                ? `${track?.metadata.describedCount ?? 0} AD · ${track?.metadata.skippedCount ?? 0} skipped · ${track?.metadata.totalGaps ?? 0} gaps`
+                ? extendedMode && (track?.metadata.extendedCount ?? 0) > 0
+                  ? `${track?.metadata.describedCount ?? 0} AD · ${track?.metadata.extendedCount ?? 0} extended · ${track?.metadata.totalGaps ?? 0} gaps`
+                  : `${track?.metadata.describedCount ?? 0} AD · ${track?.metadata.skippedCount ?? 0} skipped · ${track?.metadata.totalGaps ?? 0} gaps`
                 : 'NO AD TRACK'}
             </Text>
           </View>
@@ -370,6 +403,19 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
                 Film plays normally · audio description not generated for this title
               </Text>
             </Animated.View>
+          )}
+
+          {isExtendedPaused && (
+            <View
+              style={styles.extendedPill}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLiveRegion="assertive"
+              accessibilityLabel="Paused for audio description."
+            >
+              <View style={styles.extendedIndicator} />
+              <Text style={styles.extendedPillText}>PAUSED FOR DESCRIPTION</Text>
+            </View>
           )}
 
           {refusal && (
@@ -445,6 +491,22 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ route, navigation, t
             onFocus={revealChrome}
             accessibilityState={{ checked: hasTrackDescriptions && adEnabled, disabled: !hasTrackDescriptions }}
             accessibilityLabel={hasTrackDescriptions ? (adEnabled ? 'Audio description is on. Press to mute.' : 'Audio description is off. Press to enable.') : 'Audio description is not available for this title.'}
+          />
+          <Button
+            label={hasTrackDescriptions ? (extendedMode ? 'Extended on' : 'Extended off') : 'Extended n/a'}
+            variant={hasTrackDescriptions ? (extendedMode ? 'secondary' : 'outline') : 'ghost'}
+            style={styles.playerButton}
+            onPress={guarded(handleToggleExtended)}
+            onFocus={revealChrome}
+            disabled={!hasTrackDescriptions}
+            accessibilityState={{ checked: hasTrackDescriptions && extendedMode, disabled: !hasTrackDescriptions }}
+            accessibilityLabel={
+              hasTrackDescriptions
+                ? extendedMode
+                  ? 'Extended audio descriptions enabled. Press to turn off.'
+                  : 'Extended audio descriptions disabled. Press to enable.'
+                : 'Extended audio descriptions not available for this title.'
+            }
           />
           <Button
             label={isDescribingLive ? 'Describing…' : (config.demoMode ? 'Describe' : 'Describe live')}
@@ -644,6 +706,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1,
     color: '#E2E8F0'
+  },
+  extendedPill: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(36, 46, 62, 0.92)',
+    borderColor: colors.narration,
+    borderWidth: 1,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    gap: 6
+  },
+  extendedIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.narrationLight
+  },
+  extendedPillText: {
+    ...typography.badge,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.textPrimary,
+    fontWeight: '700'
   },
   noTrackNote: {
     alignSelf: 'center',
