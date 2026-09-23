@@ -112,7 +112,10 @@ test anything:
 
 ### Prerequisites
 
-- Node 20+ and npm
+- Node 20+ with Corepack enabled (`corepack enable`, once). The repository pins
+  Yarn 4.6.0 in `packageManager` and commits `yarn.lock`, and the test scripts
+  call `yarn`. This line said "Node 20+ and npm" until 2026-09-23, which would
+  have failed at the first `yarn` call.
 - Windows PowerShell (the `ops\*.cmd` helpers are Windows batch). On macOS or
   Linux, run the underlying npm/npx commands directly — nothing in the test or
   typecheck path is Windows-specific.
@@ -121,7 +124,7 @@ test anything:
 ```powershell
 git clone https://github.com/AtchayamG/narratv
 cd narratv
-npm install
+yarn install
 ops\check-tools.cmd      # reports what is present and what is missing
 ```
 
@@ -134,8 +137,8 @@ ops\test-all.cmd
 Expect exactly:
 
 ```
-Test Suites: 28 passed, 28 total
-Tests:       141 passed, 141 total
+Test Suites: 34 passed, 34 total
+Tests:       172 passed, 172 total
 Ran all test suites in 4 projects.
 ```
 

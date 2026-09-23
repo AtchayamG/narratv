@@ -5,7 +5,7 @@
 
 **Audio description for the 93% of films that will never get a human one.**
 
-[![Tests](https://img.shields.io/badge/Tests-28%20suites%20%7C%20141%20passing-success)](./ops/test-all.cmd)
+[![Tests](https://img.shields.io/badge/Tests-34%20suites%20%7C%20172%20passing-success)](./ops/test-all.cmd)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Fire TV](https://img.shields.io/badge/Fire%20TV-API%2030%2B%20%7C%201080p-orange)](./apps/firetv)
 [![AWS](https://img.shields.io/badge/AWS-Bedrock%20Nova%20Pro%20%7C%20Polly%20Neural%20%7C%20Step%20Functions%20%7C%20CDK%20v2-232F3E)](./services/pipeline)
@@ -335,7 +335,7 @@ evidence here that review is not optional.
 ## Running it
 
 ```powershell
-ops\test-all.cmd          # 28 suites / 141 tests across 4 workspaces
+ops\test-all.cmd          # 34 suites / 172 tests across 4 workspaces (builds the shared packages first)
 ops\build-release.cmd     # signed release APK for Fire OS / Android TV
 ops\test.cmd              # app suites only
 npm run typecheck         # tsc --noEmit over all 4 workspaces

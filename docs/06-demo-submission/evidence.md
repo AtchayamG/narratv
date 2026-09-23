@@ -69,17 +69,17 @@ This document provides exact file paths, line references, test commands, and arc
 
 ## 6. Test Suite Summary Table
 
-Run with `ops\test-all.cmd` (which pins `NODE_ENV=test` — see friction-log entry 8). Last full run **2026-09-23**:
+Run with `ops\test-all.cmd` (which pins `NODE_ENV=test` — see friction-log entry 8). Last full run **2026-09-23**, after extended mode landed, from a checkout with no `dist/` and a working directory outside the repository - the two conditions a fresh clone meets:
 
 | Workspace | Suites | Failed | Coverage highlights |
 |---|---|---|---|
 | `@narratv/contracts` | 1 | 0 | Schema validation |
-| `@narratv/scheduler` | 5 | 0 | Gap finding, placement, counters, SRT parsing, `fast-check` property tests |
-| `@narratv/firetv` | 17 | 0 | Real RN primitives (no blanket mocks); scheduler hook, voice selection, no-track titles, a11y audit, D-pad focus, badge contrast read off the rendered node |
+| `@narratv/scheduler` | 7 | 0 | Gap finding, placement, counters, SRT parsing, `fast-check` property tests, extended-mode safe points |
+| `@narratv/firetv` | 21 | 0 | Real RN primitives (no blanket mocks); scheduler hook, voice selection, no-track titles, a11y audit, D-pad focus, badge contrast read off the rendered node, extended mode (regression lock, pause/resume, toggle) |
 | `@narratv/pipeline` | 5 | 0 | Lambdas, Step Functions, CDK synth, live Bedrock/Polly adapter, typecheck |
-| **TOTAL** | **28 suites** | **0** | **141 tests**, all green |
+| **TOTAL** | **34 suites** | **0** | **172 tests**, all green |
 
-The first full run, on 2026-09-04, was 22 suites / 87 tests. The difference is
+Earlier the same day it was 28 suites / 141 tests. The first full run, on 2026-09-04, was 22 suites / 87 tests. The difference is
 tests added since, not tests re-counted: contrast, D-pad focus, screen-reader
 state and the typecheck suite among them.
 
