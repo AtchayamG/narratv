@@ -27,6 +27,28 @@ export function computeOverlaps(
   const activeDescriptions = descriptions.filter(d => d.status !== 'skipped');
 
   for (const desc of activeDescriptions) {
+    if (desc.isExtended) {
+      // Extended descriptions pause playback at pausePoint.
+      // An overlap occurs only if the pausePoint itself lies inside a dialogue cue.
+      for (const cue of cues) {
+        if (
+          desc.pausePoint !== undefined &&
+          desc.pausePoint >= cue.tStart &&
+          desc.pausePoint < cue.tEnd
+        ) {
+          overlaps.push({
+            descriptionId: desc.id,
+            descriptionText: desc.text,
+            descriptionInterval: [desc.tStart, desc.tEnd],
+            cueId: cue.id,
+            cueText: cue.text,
+            cueInterval: [cue.tStart, cue.tEnd]
+          });
+        }
+      }
+      continue;
+    }
+
     for (const cue of cues) {
       // Overlap condition: intervals [desc.tStart, desc.tEnd] and [cue.tStart, cue.tEnd] intersect
       // Intersection exists if desc.tStart < cue.tEnd and desc.tEnd > cue.tStart
@@ -52,6 +74,7 @@ export function computeOverlaps(
 export interface TrackCounters {
   totalGaps: number;
   describedCount: number;
+  extendedCount: number;
   skippedCount: number;
   overlapCount: number;
   skippedByReason: Record<string, number>;
@@ -66,6 +89,8 @@ export function computeTrackCounters(
   cues: SubtitleCue[]
 ): TrackCounters {
   const active = descriptions.filter(d => d.status !== 'skipped');
+  const normal = active.filter(d => !d.isExtended);
+  const extended = active.filter(d => d.isExtended);
   const skipped = descriptions.filter(d => d.status === 'skipped');
 
   const skippedByReason: Record<string, number> = {
@@ -85,7 +110,8 @@ export function computeTrackCounters(
 
   return {
     totalGaps: gaps.length,
-    describedCount: active.length,
+    describedCount: normal.length,
+    extendedCount: extended.length,
     skippedCount: skipped.length,
     overlapCount,
     skippedByReason

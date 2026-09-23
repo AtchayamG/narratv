@@ -1,9 +1,11 @@
-import { Gap, Description } from '@narratv/contracts';
+import { Gap, Description, SubtitleCue } from '@narratv/contracts';
 
 export interface PlaceDescriptionsOptions {
   wordsPerSec?: number;
   minConfidence?: number;
   guardMs?: number;
+  extended?: boolean;
+  cues?: SubtitleCue[];
 }
 
 export interface PlaceDescriptionsResult {
@@ -13,6 +15,7 @@ export interface PlaceDescriptionsResult {
   counters: {
     totalGaps: number;
     describedCount: number;
+    extendedCount?: number;
     skippedCount: number;
     skippedByReason: Record<string, number>;
   };
@@ -26,6 +29,51 @@ export function estimateNarrationDuration(text: string, wordsPerSec = 2.5): numb
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   // Base speech duration + 0.3s pause buffer
   return Math.max(1.0, Math.round(((wordCount / wordsPerSec) + 0.3) * 10) / 10);
+}
+
+/**
+ * Finds the earliest safe point at or after tStart within 5 seconds.
+ * A safe point is never inside a dialogue cue: the start of the matching gap,
+ * or the end of the dialogue cue that blocks it.
+ */
+export function findEarliestSafePoint(
+  tStart: number,
+  cues: SubtitleCue[],
+  gaps: Gap[],
+  guardMs = 300
+): number | null {
+  const guardSec = guardMs / 1000;
+  const isInsideCue = (t: number) =>
+    cues.some(c => t >= c.tStart && t < c.tEnd);
+
+  const candidates: number[] = [];
+
+  // 1. tStart itself if outside all dialogue cues
+  if (!isInsideCue(tStart)) {
+    candidates.push(tStart);
+  }
+
+  // 2. Start of matching gap if >= tStart and within 5s
+  for (const g of gaps) {
+    if (g.tStart >= tStart && g.tStart <= tStart + 5.0) {
+      if (!isInsideCue(g.tStart)) {
+        candidates.push(g.tStart);
+      }
+    }
+  }
+
+  // 3. End of dialogue cue that blocks tStart or lies within 5s
+  for (const c of cues) {
+    const candidatePoint = Math.round((c.tEnd + guardSec) * 1000) / 1000;
+    if (candidatePoint >= tStart && candidatePoint <= tStart + 5.0) {
+      if (!isInsideCue(candidatePoint)) {
+        candidates.push(candidatePoint);
+      }
+    }
+  }
+
+  candidates.sort((a, b) => a - b);
+  return candidates.length > 0 ? candidates[0] : null;
 }
 
 /**
@@ -102,6 +150,26 @@ export function placeDescriptions(
     });
 
     if (!matchingGap) {
+      if (options.extended) {
+        const words = draft.text.trim().split(/\s+/).filter(Boolean).length;
+        const estDuration = draft.durationSec ?? estimateNarrationDuration(draft.text, wordsPerSec);
+        const safePoint = findEarliestSafePoint(draft.tStart, options.cues || [], gaps, options.guardMs ?? 300);
+        if (safePoint !== null) {
+          const scheduledItem: Description = {
+            ...draft,
+            tStart: safePoint,
+            tEnd: Math.round((safePoint + estDuration) * 1000) / 1000,
+            durationSec: estDuration,
+            isExtended: true,
+            pausePoint: safePoint,
+            status: draft.status === 'verified' ? 'verified' : 'ai-draft',
+            placementRule: `Extended: delivered by pause at ${safePoint.toFixed(2)}s (${words} words, ${estDuration.toFixed(1)}s)`
+          };
+          scheduled.push(scheduledItem);
+          continue;
+        }
+      }
+
       const skippedItem: Description = {
         ...draft,
         status: 'skipped',
@@ -118,6 +186,24 @@ export function placeDescriptions(
     const estDuration = draft.durationSec ?? estimateNarrationDuration(draft.text, wordsPerSec);
 
     if (estDuration > matchingGap.duration) {
+      if (options.extended) {
+        const safePoint = findEarliestSafePoint(draft.tStart, options.cues || [], gaps, options.guardMs ?? 300);
+        if (safePoint !== null) {
+          const scheduledItem: Description = {
+            ...draft,
+            tStart: safePoint,
+            tEnd: Math.round((safePoint + estDuration) * 1000) / 1000,
+            durationSec: estDuration,
+            isExtended: true,
+            pausePoint: safePoint,
+            status: draft.status === 'verified' ? 'verified' : 'ai-draft',
+            placementRule: `Extended: delivered by pause at ${safePoint.toFixed(2)}s (${words} words, ${estDuration.toFixed(1)}s)`
+          };
+          scheduled.push(scheduledItem);
+          continue;
+        }
+      }
+
       const skippedItem: Description = {
         ...draft,
         status: 'skipped',
@@ -152,7 +238,8 @@ export function placeDescriptions(
     all: [...scheduled, ...skipped].sort((a, b) => a.tStart - b.tStart),
     counters: {
       totalGaps: gaps.length,
-      describedCount: scheduled.length,
+      describedCount: scheduled.filter(d => !d.isExtended).length,
+      extendedCount: scheduled.filter(d => d.isExtended).length,
       skippedCount: skipped.length,
       skippedByReason
     }
