@@ -1,5 +1,5 @@
 import { FixtureTrackRepository } from '../src/features/catalog/data/fixture-track-repository';
-import { parseSrt, findGaps, placeDescriptions } from '@narratv/scheduler';
+import { findGaps, placeDescriptions } from '@narratv/scheduler';
 
 describe('Criterion A — Regression Lock: Golden Fixtures with Extended OFF', () => {
   const repo = new FixtureTrackRepository();

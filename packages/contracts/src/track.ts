@@ -8,7 +8,8 @@ export const TrackMetadataSchema = z.object({
   overlapCount: z.number().int().nonnegative(),
   generatedAt: z.string(),
   model: z.string(),
-  sourceSrt: z.string().optional()
+  sourceSrt: z.string().optional(),
+  extendedCount: z.number().int().nonnegative().optional()
 });
 
 export type TrackMetadata = z.infer<typeof TrackMetadataSchema>;

@@ -32,7 +32,9 @@ export const DescriptionSchema = z.object({
   placementRule: z.string().optional(),
   verifiedAt: z.string().optional(),
   verifiedBy: z.string().optional(),
-  durationSec: z.number().nonnegative().optional()
+  durationSec: z.number().nonnegative().optional(),
+  isExtended: z.boolean().optional(),
+  pausePoint: z.number().min(0).optional()
 });
 
 export type Description = z.infer<typeof DescriptionSchema>;
