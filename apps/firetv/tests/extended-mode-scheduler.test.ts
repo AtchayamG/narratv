@@ -338,4 +338,31 @@ describe('Criterion C — Player Hook Tests (useScheduler Extended Mode)', () =>
       expect(result.current.extendedPauseDescription).toBeNull();
     });
   });
+
+  test('Case 6: a pause window swallowed by dialogue is refused out loud once the line ends - never paused mid-line, never silently lost', () => {
+    // pausePoint 9.5 is clear, but the window runs to 10.3 and the player samples
+    // the clock in steps. A sample at 10.2 is inside the line that starts at 10.0,
+    // where rule 1 (dialogue priority) returns early. Before this test existed the
+    // description then vanished: the window passed during the line, so it was
+    // neither spoken nor refused.
+    const lateDesc: Description = { ...extendedDesc, id: 'desc-late-tick', tStart: 9.5, tEnd: 12.0, pausePoint: 9.5 };
+    const tts = new FakeTts();
+    let pauseCalls = 0;
+    const { result, rerender } = setup([lateDesc], {
+      extendedEnabled: true,
+      onPausePlayback: () => { pauseCalls++; },
+      tts
+    });
+    for (const t of [10.2, 11.0, 12.0, 12.9]) {
+      act(() => rerender({ t }));
+      expect(pauseCalls).toBe(0);
+      expect(tts.spoken).toEqual([]);
+    }
+    act(() => rerender({ t: 13.2 }));
+    expect(pauseCalls).toBe(0);
+    expect(result.current.isExtendedPaused).toBe(false);
+    expect(tts.spoken).toEqual([]);
+    expect(result.current.refusal?.description.id).toBe('desc-late-tick');
+    expect(result.current.refusal?.reason).toBe('dialogue-active');
+  });
 });

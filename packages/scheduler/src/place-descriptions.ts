@@ -32,9 +32,25 @@ export function estimateNarrationDuration(text: string, wordsPerSec = 2.5): numb
 }
 
 /**
- * Finds the earliest safe point at or after tStart within 5 seconds.
- * A safe point is never inside a dialogue cue: the start of the matching gap,
- * or the end of the dialogue cue that blocks it.
+ * How late an extended description may be delivered, measured from the moment
+ * it was written for (its tStart). Beyond this the picture has moved on and the
+ * line would describe a frame the viewer is no longer looking at.
+ */
+export const MAX_EXTENDED_DELAY_SEC = 5.0;
+
+/**
+ * Finds the earliest safe point at or after tStart, no more than
+ * MAX_EXTENDED_DELAY_SEC later, at which the film may be paused to speak.
+ *
+ * A point is safe only if it is outside every dialogue cue AND no cue begins
+ * within the guard after it - the player samples the clock in steps, so a pause
+ * aimed a few milliseconds before a line would otherwise land inside it and
+ * freeze an actor mid-sentence. The guard is the same 300 ms findGaps uses.
+ *
+ * The description's own tStart comes first. When it is clear, the right answer
+ * is to pause right there and speak over the exact frame the line was written
+ * for - zero seconds late. Only when tStart itself is inside, or crowding, a
+ * line of dialogue does the safe point move to the end of that dialogue.
  */
 export function findEarliestSafePoint(
   tStart: number,
@@ -43,37 +59,103 @@ export function findEarliestSafePoint(
   guardMs = 300
 ): number | null {
   const guardSec = guardMs / 1000;
-  const isInsideCue = (t: number) =>
-    cues.some(c => t >= c.tStart && t < c.tEnd);
+  const isClear = (t: number) =>
+    !cues.some(c => t >= c.tStart - guardSec && t < c.tEnd);
+  const inWindow = (t: number) => t >= tStart && t <= tStart + MAX_EXTENDED_DELAY_SEC;
 
   const candidates: number[] = [];
 
-  // 1. tStart itself if outside all dialogue cues
-  if (!isInsideCue(tStart)) {
-    candidates.push(tStart);
-  }
+  // 1. tStart itself.
+  if (isClear(tStart)) candidates.push(tStart);
 
-  // 2. Start of matching gap if >= tStart and within 5s
+  // 2. The start of a later gap.
   for (const g of gaps) {
-    if (g.tStart >= tStart && g.tStart <= tStart + 5.0) {
-      if (!isInsideCue(g.tStart)) {
-        candidates.push(g.tStart);
-      }
-    }
+    if (inWindow(g.tStart) && isClear(g.tStart)) candidates.push(g.tStart);
   }
 
-  // 3. End of dialogue cue that blocks tStart or lies within 5s
+  // 3. The end of a line of dialogue, plus the guard.
   for (const c of cues) {
-    const candidatePoint = Math.round((c.tEnd + guardSec) * 1000) / 1000;
-    if (candidatePoint >= tStart && candidatePoint <= tStart + 5.0) {
-      if (!isInsideCue(candidatePoint)) {
-        candidates.push(candidatePoint);
-      }
-    }
+    const t = Math.round((c.tEnd + guardSec) * 1000) / 1000;
+    if (inWindow(t) && isClear(t)) candidates.push(t);
   }
 
   candidates.sort((a, b) => a - b);
   return candidates.length > 0 ? candidates[0] : null;
+}
+
+export interface ValidatePreplacedOptions {
+  extended?: boolean;
+  minConfidence?: number;
+  guardMs?: number;
+}
+
+/**
+ * Validates a PRE-PLACED track - one whose timings are the deliverable, each
+ * line written against the frame at that exact timestamp - against the real
+ * dialogue. A pre-placed line is never moved. One that overlaps dialogue is:
+ *
+ *  - extended OFF: refused, loudly, exactly as before extended mode existed;
+ *  - extended ON:  delivered by pausing the film at the earliest safe point,
+ *                  if there is one within MAX_EXTENDED_DELAY_SEC, and refused
+ *                  with its reason if there is not.
+ *
+ * Extended mode never bypasses a quality gate: a human-rejected or
+ * low-confidence line stays skipped.
+ *
+ * This lives here, beside findEarliestSafePoint, rather than inline in the
+ * track repository, because the repository used to carry its own copy of the
+ * rule and the copy measured the 5 s limit from the wrong end.
+ */
+export function validatePreplaced(
+  drafts: Description[],
+  cues: SubtitleCue[],
+  gaps: Gap[],
+  options: ValidatePreplacedOptions = {}
+): Description[] {
+  const minConfidence = options.minConfidence ?? 0.6;
+  const guardMs = options.guardMs ?? 300;
+  const collides = (d: Description) => cues.some(c => d.tStart < c.tEnd && d.tEnd > c.tStart);
+
+  return drafts.map(d => {
+    if (!collides(d)) return d;
+
+    const refused: Description = {
+      ...d,
+      status: 'skipped',
+      skipReason: 'no-gap',
+      placementRule: 'Refused: overlaps a real dialogue cue.'
+    };
+    if (!options.extended) return refused;
+
+    if (d.status === 'skipped' && d.skipReason === 'human-rejected') return d;
+    if (d.confidence < minConfidence) {
+      return {
+        ...d,
+        status: 'skipped',
+        skipReason: 'low-confidence',
+        placementRule: `Confidence ${(d.confidence * 100).toFixed(0)}% below required ${(minConfidence * 100).toFixed(0)}% threshold`
+      };
+    }
+
+    const safePoint = findEarliestSafePoint(d.tStart, cues, gaps, guardMs);
+    if (safePoint === null) {
+      return {
+        ...refused,
+        placementRule: `Refused: overlaps a real dialogue cue, and no safe pause point exists within ${MAX_EXTENDED_DELAY_SEC.toFixed(1)} s of ${d.tStart.toFixed(2)}s.`
+      };
+    }
+
+    const late = Math.round((safePoint - d.tStart) * 100) / 100;
+    return {
+      ...d,
+      isExtended: true,
+      pausePoint: safePoint,
+      placementRule:
+        late === 0
+          ? `Extended: film pauses at ${safePoint.toFixed(2)}s, the frame this line was written for, and resumes when it has been spoken.`
+          : `Extended: film pauses at ${safePoint.toFixed(2)}s (${late.toFixed(2)} s after its frame, when the dialogue ends) and resumes when it has been spoken.`
+    };
+  });
 }
 
 /**

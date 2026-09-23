@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(36, 46, 62, 0.92)',
+    backgroundColor: colors.surfaceElevated,
     borderColor: colors.narration,
     borderWidth: 1,
     borderRadius: radii.full,

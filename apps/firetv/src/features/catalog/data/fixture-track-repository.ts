@@ -1,5 +1,5 @@
 import { Title, DescriptionTrack, SubtitleCue, Description } from '@narratv/contracts';
-import { parseSrt, findGaps, placeDescriptions, computeTrackCounters } from '@narratv/scheduler';
+import { parseSrt, findGaps, placeDescriptions, validatePreplaced, computeTrackCounters } from '@narratv/scheduler';
 import { ITrackRepository } from '../domain/repository';
 
 const rawTitles = require('../../../../assets/fixtures/titles.json');
@@ -226,96 +226,12 @@ export class FixtureTrackRepository implements ITrackRepository {
       const collidesWithDialogue = (d: Description) =>
         cues.some(cue => d.tStart < cue.tEnd && d.tEnd > cue.tStart);
 
-      const findPreplacedSafePoint = (d: Description): { safePoint: number | null; reason?: string } => {
-        // Quality gates: low-confidence (<0.6) or human-rejected candidates are NEVER extended
-        if (d.status === 'skipped' && d.skipReason === 'human-rejected') {
-          return { safePoint: null, reason: 'human-rejected' };
-        }
-        if (d.confidence !== undefined && d.confidence < 0.6) {
-          return { safePoint: null, reason: 'low-confidence' };
-        }
-
-        const overlappingCues = cues
-          .filter(cue => d.tStart < cue.tEnd && d.tEnd > cue.tStart)
-          .sort((a, b) => a.tStart - b.tStart);
-
-        if (overlappingCues.length === 0) {
-          return { safePoint: null };
-        }
-
-        // Trace cue chain starting from the first overlapping cue
-        const chainStart = overlappingCues[0].tStart;
-        let chainEnd = overlappingCues[0].tEnd;
-
-        // Any cue that connects with less than 300ms gap extends the chain
-        const sortedCues = [...cues].sort((a, b) => a.tStart - b.tStart);
-        for (const cue of sortedCues) {
-          if (cue.tStart >= chainStart && cue.tStart <= chainEnd + 0.3) {
-            chainEnd = Math.max(chainEnd, cue.tEnd);
-          }
-        }
-
-        const chainDuration = chainEnd - chainStart;
-        if (chainDuration > 5.0) {
-          return { safePoint: null, reason: 'cue-chain-exceeded' };
-        }
-
-        const candidatePoint = Math.round((chainEnd + 0.3) * 100) / 100;
-        const insideDialogue = cues.some(c => candidatePoint >= c.tStart && candidatePoint < c.tEnd);
-        if (insideDialogue) {
-          return { safePoint: null, reason: 'inside-dialogue' };
-        }
-
-        return { safePoint: candidatePoint };
-      };
-
+      // Pre-placed lines are never moved. The shared validator refuses one that
+      // overlaps dialogue - or, with extended mode on, delivers it by pausing the
+      // film at the earliest safe point. One rule, one place: this file used to
+      // carry its own copy, and the copy measured the 5 s limit from the wrong end.
       const descriptions: Description[] = preplaced
-        ? rawDrafts.map(d => {
-            if (!collidesWithDialogue(d)) {
-              return d;
-            }
-            if (options?.extended) {
-              const { safePoint, reason } = findPreplacedSafePoint(d);
-              if (safePoint !== null) {
-                return {
-                  ...d,
-                  isExtended: true,
-                  pausePoint: safePoint,
-                  placementRule: `Extended: delivered by pause at ${safePoint.toFixed(2)}s`
-                };
-              }
-              if (reason === 'cue-chain-exceeded') {
-                return {
-                  ...d,
-                  status: 'skipped' as const,
-                  skipReason: 'no-gap' as const,
-                  placementRule: 'Refused: dialogue cue chain exceeds 5.0 s limit'
-                };
-              }
-              if (reason === 'low-confidence') {
-                return {
-                  ...d,
-                  status: 'skipped' as const,
-                  skipReason: 'low-confidence' as const,
-                  placementRule: `Rejected: confidence ${d.confidence} < threshold 0.6`
-                };
-              }
-              if (reason === 'human-rejected') {
-                return {
-                  ...d,
-                  status: 'skipped' as const,
-                  skipReason: 'human-rejected' as const,
-                  placementRule: 'Rejected during human editorial review'
-                };
-              }
-            }
-            return {
-              ...d,
-              status: 'skipped' as const,
-              skipReason: 'no-gap' as const,
-              placementRule: 'Refused: overlaps a real dialogue cue.'
-            };
-          })
+        ? validatePreplaced(rawDrafts, cues, gaps, { extended: options?.extended })
         : placeDescriptions(gaps, rawDrafts, { extended: options?.extended, cues }).all;
 
       const active = descriptions.filter(d => d.status !== 'skipped');

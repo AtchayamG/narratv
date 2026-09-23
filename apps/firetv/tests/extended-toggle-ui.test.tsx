@@ -97,10 +97,10 @@ describe('Extended Mode Toggle UI & 10-Foot Accessibility (PlayerScreen)', () =>
 
     const videoElement = screen.getByTestId('native-video-player');
 
-    // Simulate playhead reaching safe pausePoint 152.05s for sintel-ad-11
+    // Simulate playhead reaching sintel-ad-11's pause point: 146.8 s, its own frame
     act(() => {
       videoElement.props.onProgress({
-        currentTime: 152.05,
+        currentTime: 146.8,
         playableDuration: 888.064,
         seekableDuration: 888.064
       });

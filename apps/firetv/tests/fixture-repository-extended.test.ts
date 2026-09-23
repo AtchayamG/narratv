@@ -1,5 +1,4 @@
 import { FixtureTrackRepository } from '../src/features/catalog/data/fixture-track-repository';
-import { Description, SubtitleCue } from '@narratv/contracts';
 
 describe('FixtureTrackRepository — Primary Path Extended Mode (Correction 7)', () => {
   const repo = new FixtureTrackRepository();
@@ -56,41 +55,35 @@ describe('FixtureTrackRepository — Primary Path Extended Mode (Correction 7)',
     expect(ad11).toBeDefined();
     expect(ad28).toBeDefined();
 
-    expect(ad11!.pausePoint).toBeCloseTo(152.05, 2);
-    expect(ad28!.pausePoint).toBeCloseTo(456.80, 2);
+    // Both lines start in clear air - 146.8 s is 2.05 s before its dialogue, 449.3 s
+    // is 3.5 s before its - so the film pauses on the exact frame each was written
+    // for. An earlier version paused at the END of the dialogue instead (152.05 s,
+    // 456.8 s): 5.25 s and 7.5 s late, both past the 5 s limit it claimed to enforce.
+    expect(ad11!.pausePoint).toBe(ad11!.tStart);
+    expect(ad11!.pausePoint).toBe(146.8);
+    expect(ad28!.pausePoint).toBe(ad28!.tStart);
+    expect(ad28!.pausePoint).toBe(449.3);
 
     // Verify neither pausePoint lies inside any dialogue cue
     for (const item of [ad11!, ad28!]) {
       const p = item.pausePoint!;
-      const insideDialogue = cues.some(c => p >= c.tStart && p < c.tEnd);
+      const insideDialogue = cues.some(c => p >= c.tStart - 0.3 && p < c.tEnd);
       expect(insideDialogue).toBe(false);
-      expect(item.placementRule).toMatch(/^Extended: delivered by pause at /);
+      expect(item.placementRule).toMatch(/^Extended: film pauses at /);
     }
   });
 
-  test('Synthetic fixture: a cue longer than 5.0 s covering a description stays refused even with extended: true', async () => {
-    // Direct check of cue-chain length logic in safe pause placement
-    const longCue: SubtitleCue = { id: 1, tStart: 100.0, tEnd: 106.0, text: 'Long dialogue' };
-    const descOverlapping: Description = {
-      id: 'desc-long',
-      tStart: 101.0,
-      tEnd: 104.0,
-      text: 'Visual action happening during long speech.',
-      confidence: 0.9,
-      frameRef: 'frame1.jpg',
-      model: 'test',
-      status: 'ai-draft'
-    };
-
-    // Verify when a cue chain exceeds 5.0s, safePoint is not found and description is refused
-    const cues = [longCue];
-    const chainDuration = longCue.tEnd - longCue.tStart;
-    expect(chainDuration).toBeGreaterThan(5.0);
-
-    // Using placeDescriptions with cues > 5s also stays refused if no safe point exists within 5s
-    const { findEarliestSafePoint } = require('@narratv/scheduler');
-    const safePoint = findEarliestSafePoint(descOverlapping.tStart, cues, [], 300);
-    // Earliest safe point candidate after longCue would be 106.3s, which is 5.3s after tStart 101.0 (exceeds 5.0s)
-    expect(safePoint).toBeNull();
+  test('the repository delegates to the shared validator rather than carrying its own copy of the rule', () => {
+    // The repository once had an inline safe-point rule that measured the 5 s
+    // limit from the wrong end, and the test meant to cover it never called the
+    // repository - it asserted 6.0 > 5.0 on its own constant. The rule and its
+    // tests now live in packages/scheduler/tests/validate-preplaced.test.ts;
+    // this pins that the repository still uses it.
+    const src = require('fs').readFileSync(
+      require('path').join(__dirname, '../src/features/catalog/data/fixture-track-repository.ts'),
+      'utf8'
+    );
+    expect(src).toMatch(/validatePreplaced\(rawDrafts, cues, gaps/);
+    expect(src).not.toMatch(/findPreplacedSafePoint|chainEnd|chainDuration/);
   });
 });

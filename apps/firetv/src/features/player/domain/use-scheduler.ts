@@ -46,6 +46,13 @@ export const TAIL_GUARD_SEC = 0.4;
  */
 export const REFUSAL_HOLD_SEC = 4.0;
 
+/**
+ * How late an unseen extended-pause window may still be refused out loud.
+ * Long enough to outlast a line of dialogue that swallowed the window; past
+ * this, the viewer has seeked beyond it and no notice is owed.
+ */
+export const MISSED_WINDOW_MAX_SEC = 8.0;
+
 export type RefusalReason = 'no-gap' | 'dialogue-active';
 
 export interface UseSchedulerProps {
@@ -340,6 +347,25 @@ export function useScheduler({
 
     // If extended mode is on, look for an extended description at its safe pausePoint
     if (extendedEnabled) {
+      // A pause window can pass unseen: step 1 returns early on every tick that
+      // falls inside dialogue, so a clock sample that lands in a line during the
+      // window means the line is neither spoken nor refused - it just vanishes.
+      // Silence is what a refusal must never look like, so a missed window is
+      // refused out loud on the first tick after the dialogue releases the floor.
+      // Anything more than MISSED_WINDOW_MAX_SEC late is treated as a seek past
+      // it, which is the viewer's choice and owes no notice.
+      const missed = descriptions.find(desc => {
+        if (desc.status === 'skipped' || !desc.isExtended || handledIdsRef.current.has(desc.id)) return false;
+        const windowEnd = (desc.pausePoint ?? desc.tStart) + 0.8;
+        return currentTimeSec > windowEnd && currentTimeSec <= windowEnd + MISSED_WINDOW_MAX_SEC;
+      });
+      if (missed) {
+        handledIdsRef.current.add(missed.id);
+        refusalSetAtRef.current = currentTimeSec;
+        setRefusal({ description: missed, reason: 'dialogue-active' });
+        return;
+      }
+
       const extendedCandidate = descriptions.find(
         desc =>
           desc.status !== 'skipped' &&
