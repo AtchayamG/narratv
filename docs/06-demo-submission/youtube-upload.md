@@ -1,6 +1,13 @@
 # YouTube upload — NarraTV demo video
 
-**File**: `docs/assets/narratv-demo-v5.mp4` (33.0 MB / 34,582,315 bytes,
+**File (v6, 2026-09-24)**: `docs/assets/narratv-demo-v6.mp4` (176.68s = 2:56.7, 1920x1080 @ 60fps,
+AAC 48 kHz stereo, integrated -15.9 LUFS). It is v5 unchanged except for ONE 14.1 s insert at
+1:38: an emulator recording (screen + device audio, `adb emu screenrecord`) of extended mode
+handling sintel-ad-11, the same line v5 shows being skipped at 1:10. Built by
+`ops-tools/video/assemble-demo-v6.mjs`; capture by `ops-tools/orch-p1-record-extended.mjs`
+(logcat in the same run: pause at film 146.70 s, TTS finished 5.89 s later, resumed 12 ms after).
+
+**Previous file (v5)**: `docs/assets/narratv-demo-v5.mp4` (33.0 MB / 34,582,315 bytes,
 162.556s = 2:42.5, 1920x1080 @ 60fps, AAC 48 kHz stereo)
 
 **Thumbnail**: `docs/assets/thumbnail-youtube.png` (484 KB)
@@ -32,7 +39,7 @@ the voice stops. Across the segment the bed went -25.6 to -30.2 dB mean, only
 4.6 dB of average reduction against the old flat 10 dB, so the recordings are
 audibly *louder* than before while getting out of the way when it matters.
 
-The 3:00 limit in the rules is hard. This cut is 17.4s under it.
+The 3:00 limit in the rules is hard. v6 is 3.3 s under it (v5 was 17.4 s under).
 
 ## Visibility
 
@@ -62,11 +69,12 @@ What this demo shows, in order:
 0:29  The catalogue on a real Fire TV build, driven by D-pad
 0:37  Sintel playing, descriptions landing in real dialogue silence
 1:10  The refusal: "SKIPPED · NO GAP" on screen instead of talking over a cue
-1:38  Big Buck Bunny has no description track, and the app says so
-1:51  "Describe this frame" declined, because the app is in DEMO mode
-2:01  Switched to LIVE: a real Amazon Bedrock Nova Pro description
-2:17  Architecture, and how good the model actually was: 19 of 34 unaided
-2:31  Credits and licences
+1:38  Extended mode (opt-in): the same line is not dropped; the film pauses and it is spoken
+1:52  Big Buck Bunny has no description track, and the app says so
+2:05  "Describe this frame" declined, because the app is in DEMO mode
+2:15  Switched to LIVE: a real Amazon Bedrock Nova Pro description
+2:31  Architecture, and how good the model actually was: 19 of 34 unaided
+2:45  Credits and licences
 
 How it works: a pure-TypeScript scheduler finds dialogue-free gaps from the real
 subtitle track, applies 300ms guard bands, and budgets each line by speech rate.
