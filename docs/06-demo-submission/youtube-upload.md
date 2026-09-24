@@ -121,7 +121,9 @@ React Native, blind, low vision, assistive technology, hackathon
 
 ## After upload — THREE places
 
-Uploaded 2026-09-21: https://youtu.be/slyluQxHFXA
+Uploaded 2026-09-24 (v6): https://youtu.be/J9Vt2vn8tyY - public, 2:57 in Studio; signed-out oEmbed lookup returns it; both Devpost records re-read after reload and the public page iframe is /embed/J9Vt2vn8tyY.
+
+Previous (v5), uploaded 2026-09-21: https://youtu.be/slyluQxHFXA
 
 Re-uploading mints a NEW video id. The old one is `Z9Vgvd5bRUs`. Paste the new
 watch URL back and it goes into **three** places:
